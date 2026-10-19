@@ -3744,13 +3744,22 @@ window.SL = window.SL || {};
     const holds = topups - returns + adjust - spent;
     return { wid, topups, returns, adjust, given: topups - returns, spent, spentProject, pays, holds, owedVia, owedViaProject, left: holds - owedVia, firstTopup };
   });
-  /** Float ledger rows (oldest first) with running balance: {date, kind:"in"|"out", h, label, unitKey?, cashId?, bal} */
+  /** Who handed a top-up over: its `via` (cash an investor gave the holder for Ryan, e.g. "Hashem Restaurants"), by the
+   *  name of the wallet that holder keeps (its Arabic in Arabic), else Ryan. */
+  M.topupFrom = (c) => {
+    const v = String((c && c.via) || "").trim();
+    if (!v) return M.walletName(M.ownerWalletId());
+    const w = Object.values(S().wallets || {}).find((x) => x && x.holder === v);
+    return (w && U.isAr() && w.holderAr) || v;
+  };
+  /** Float ledger rows (oldest first) with running balance: {date, kind:"in"|"out", h, label, from (a top-up's giver),
+   *  unitKey?, cashId?, bal} */
   M.floatLedger = (wid, D) => {
     D = D || U.today();
     const rows = [];
     for (const c of M.cash()) {
       if (c.walletId !== wid || !c.date || c.date > D) continue;
-      if (c.type === "topup") rows.push({ date: c.date, h: U.hal(c.amount), label: U.L("Cash from ", "نقد من ") + M.walletName(M.ownerWalletId()), cashId: c.id, ctype: "topup", kind: "in", note: c.note, at: c.createdAt || 0 });
+      if (c.type === "topup") rows.push({ date: c.date, h: U.hal(c.amount), label: U.L("Cash from ", "نقد من ") + M.topupFrom(c), from: M.topupFrom(c), cashId: c.id, ctype: "topup", kind: "in", note: c.note, at: c.createdAt || 0 });
       else if (c.type === "return") rows.push({ date: c.date, h: -U.hal(c.amount), label: U.L("Returned to Ryan", "إرجاع إلى " + M.walletName(M.ownerWalletId())), cashId: c.id, ctype: "return", kind: "out", at: c.createdAt || 0 });
       else if (c.type === "adjust") rows.push({ date: c.date, h: U.hal(c.amount), label: U.L("Adjustment", "تعديل العهدة") +(c.note ? " · " + c.note : ""), cashId: c.id, ctype: "adjust", kind: U.hal(c.amount) >= 0 ? "in" : "out", at: c.createdAt || 0 });
     }
@@ -10550,7 +10559,7 @@ window.SL = window.SL || {};
       const head = cols.map(([k, l]) => `<th class="r${k === "me" ? " bl-me" : ""}" scope="col">${labH(k, l)}</th>`).join("");
       // the Invoice column: the amount of the bill the row is about, right after its name (a party's −/+ come after)
       const invH = `<span class="bl-lg">${U.L("Invoice", "الفاتورة")}</span><span class="bl-sm" aria-hidden="true">${U.L("Inv.", "فاتورة")}</span>`;
-      let h = '<div class="v-bal"><div class="hrow bl-top"><h2 class="t20">' + U.L("Balances", "الأرصدة") + '</h2><span class="spacer"></span>' + (SL._pdf && SL._pdf.btn ? SL._pdf.btn() : "") + ui.asOfChip() + "</div>";
+      let h = '<div class="v-bal"><div class="hrow bl-top"><h2 class="t20">' + U.L("Balances", "الأرصدة") + '</h2><span class="spacer"></span>' + (SL._pdf && SL._pdf.btn ? SL._pdf.btn() : "") + (SL._pdf && SL._pdf.budgetBtn ? SL._pdf.budgetBtn() : "") + ui.asOfChip() + "</div>";
       if (!all.length) return h + '<div class="empty">' + U.L("Nothing logged yet.", "لم يُسجَّل شيء بعد.") + "</div></div>";
       h += X.dash(pid, D, fw);
       h += X.summary(all, pid, D, f, sayed, fw, holds);
@@ -13708,7 +13717,7 @@ window.SL = window.SL || {};
   X.MINUS = MINUS;
   /** A ledger row's label in the viewer's language. The model folds an adjustment's note into it, so a read-only viewer gets the bare word. */
   X.label = (r, ro) => {
-    if (r.ctype === "topup") return U.L("Cash from ", "نقد من ") + M.walletName(M.ownerWalletId());
+    if (r.ctype === "topup") return U.L("Cash from ", "نقد من ") + (r.from || M.walletName(M.ownerWalletId()));
     if (r.ctype === "return") return U.L("Returned to Ryan", "إرجاع إلى " + M.walletName(M.ownerWalletId()));
     if (r.ctype === "adjust") {
       const c = (SL.S.cash || {})[r.cashId], note = c && c.note;
@@ -17548,7 +17557,7 @@ window.SL = window.SL || {};
     let h = `<div class="v-report${opts.frozen ? " frozen" : ""}">`;
     if (opts.frozen) h += `<div class="notice v-report-frozen">${U.L("Frozen ", "مجمَّد ")}${U.esc(U.dShort(U.ymd(new Date(opts.frozen.frozenAt || 0))))} · ${U.L("live figures may differ", "قد تختلف الأرقام الحالية")} · <a class="lnk" href="#${U.esc(pid)}~report">${U.L("Live report", "التقرير الحالي")}</a></div>`;
     h += `<div class="v-report-h"><h1 class="t20">${U.t(U.isAr() && d.projectAr ? d.projectAr : d.project)} · ${U.L("Investor report", "تقرير المستثمرين")}</h1>
-      <div class="hrow t13">${!ro && d.live ? ui.asOfChip() : U.L("As of ", "حتى تاريخ ") + U.esc(U.dShort(d.asOf)) + " " + U.esc(String(d.asOf).slice(0, 4))}${ro ? ' <span class="muted">' + U.L("· view only", "· عرض فقط") + "</span>" : ""}<span class="spacer"></span>${d.live && SL._pdf && SL._pdf.btn ? SL._pdf.btn("btn sm sec") : ""}</div></div>`;
+      <div class="hrow t13">${!ro && d.live ? ui.asOfChip() : U.L("As of ", "حتى تاريخ ") + U.esc(U.dShort(d.asOf)) + " " + U.esc(String(d.asOf).slice(0, 4))}${ro ? ' <span class="muted">' + U.L("· view only", "· عرض فقط") + "</span>" : ""}<span class="spacer"></span>${d.live && SL._pdf && SL._pdf.btn ? SL._pdf.btn("btn sm sec") : ""}${d.live && SL._pdf && SL._pdf.budgetBtn ? SL._pdf.budgetBtn("btn sm sec") : ""}</div></div>`;
     h += `<div class="sec v-report-one">${ui.sech(U.L("In one line", "باختصار"))}<p class="t16">${X.oneLine(d)}</p>${X.boqLine(d)}</div>`;
     h += '<div class="v-report-grid">';
     h += X.moneyIn(d, ro) + X.moneyOut(d);
@@ -18348,6 +18357,28 @@ window.SL = window.SL || {};
     Object.assign(X, sz); X.CW = X.PW - 2 * X.MX;
     try { return fn(); } finally { Object.assign(X, keep); }
   };
+  /** One page, as big as it fits: mk() makes a fresh doc ({pages: []}) and draws it at the kit's current page globals.
+   *  Tried at scale 1, then smaller (to min, default 0.45) as a dry run on tiny canvases (text measures the same at any
+   *  pixel size) until mk draws a single page; then drawn for real. At scale s the kit draws on a page 1/s as big (its
+   *  margins too) onto the real page's pixels, noted as the real size, so everything comes out s times smaller.
+   *  sz: the real page ({PW, PH, MX, MT, MB}; default A4). Freed dry pages. → {doc, s} */
+  X.onePage = (mk, sz, min) => {
+    sz = sz || { PW: 595.28, PH: 841.89, MX: 36, MT: 30, MB: 46 };
+    const run = (s, px) => {
+      const S0 = X.S;
+      X.S = px;
+      try { return X.withSize({ PW: sz.PW / s, PH: sz.PH / s, MX: sz.MX / s, MT: sz.MT / s, MB: sz.MB / s }, mk); } finally { X.S = S0; }
+    };
+    let s = 1;
+    for (; s > (min || 0.45); s = Math.round((s - 0.03) * 100) / 100) {
+      const dry = run(s, 0.05), n = dry.pages.length;
+      dry.pages.forEach((pg) => { pg.c.width = 0; pg.c.height = 0; });
+      if (n <= 1) break;
+    }
+    const doc = run(s, X.S * s);
+    doc.pages.forEach((pg) => (pg.c._pt = [sz.PW, sz.PH]));
+    return { doc, s };
+  };
   /** A new blank page on doc (A4, or the size of X.withSize), drawn in points. */
   X.page = (doc) => {
     const c = document.createElement("canvas");
@@ -18438,7 +18469,7 @@ window.SL = window.SL || {};
   X.band = (pg) => {
     const d = pg.doc;
     X.rect(pg, 0, 0, X.PW, 5, C.float);
-    X.text(pg, U.L("MIMAR · INVESTOR REPORT", "معمار · تقرير المستثمرين"), X.MX, 22, { size: 7, weight: 700, color: C.ink3 });
+    X.text(pg, d.bandTxt || U.L("MIMAR · INVESTOR REPORT", "معمار · تقرير المستثمرين"), X.MX, 22, { size: 7, weight: 700, color: C.ink3 }); // d.bandTxt: another document's name
     X.text(pg, d.project + " · " + U.L("as of ", "حتى تاريخ ") + d.asOfTxt, X.PW - X.MX, 22, { size: 7, weight: 600, color: C.ink3, align: "end" });
     X.hline(pg, X.MX, 29, X.CW, C.line);
     pg.y = 30;
@@ -19033,7 +19064,7 @@ window.SL = window.SL || {};
     if (X.snapPdfs().length) return X.snapDl ? `<button type="button" class="${cls || "chip"} pdf-btn" data-act="snapPdf"${X.busy ? " disabled" : ""}>${U.L("⤓ Investor PDF", "⤓ PDF للمستثمرين")}</button>` : "";
     if (can === null) can = X.canDraw();
     if (!can || !SL.S.downloads || (SL._admin && SL._admin.dlGone)) return "";
-    return `<button type="button" class="${cls || "chip"} pdf-btn" data-act="investorPdf"${X.busy ? " disabled" : ""} title="${U.L("A PDF for investors: balances, invoices, crews and equipment", "ملف PDF للمستثمرين: الأرصدة والفواتير والعمالة والمعدات")}">${X.busy && X.busyKind !== "sayed" ? U.L("Making PDF…", "جارٍ إنشاء PDF…") : U.L("⤓ Investor PDF", "⤓ PDF للمستثمرين")}</button>`;
+    return `<button type="button" class="${cls || "chip"} pdf-btn" data-act="investorPdf"${X.busy ? " disabled" : ""} title="${U.L("A PDF for investors: balances, invoices, crews and equipment", "ملف PDF للمستثمرين: الأرصدة والفواتير والعمالة والمعدات")}">${X.busy && !X.busyKind ? U.L("Making PDF…", "جارٍ إنشاء PDF…") : U.L("⤓ Investor PDF", "⤓ PDF للمستثمرين")}</button>`;
   };
   /** "⤓ PDF for Sayed" (Balances › Sayed's money): where the Investor PDF button shows (this view can draw pages and
    *  save files), not in a frozen snapshot (it ships only the investor PDFs). wid: the float wallet. */
@@ -19091,13 +19122,13 @@ window.SL = window.SL || {};
 /* ---- 74-pdf-sayed.js ---- */
 /* ---- 74-pdf-sayed.js ---- */
 /* 74-pdf-sayed: "⤓ PDF for Sayed" (Balances › Sayed's money). A plain, big-print PDF for the float's holder, always in
- * Arabic (right to left) whatever the viewer's language, on A5 pages (sent by phone: an A5 page shows its print about
- * 1.4× the size of an A4 one). The first pages tell the story in five coloured blocks (got from Ryan, paid out, should
- * have, counted, the difference), the next pages list every line, grouped as on Balances. Figures as of the as-of date,
- * from M.floatReceipt (the "Sayed's money" box) and M.floatLedger (the lines of Pay › float and the Statement), to the
- * halala; right-aligned (ones under ones), with .00 on every figure of a block or a table when one has halalas.
- * Arabic words only: no free-text notes (Ryan's are internal and in English); a name or tag with no Arabic gives way to
- * its Arabic. Drawn with the 72-pdf kit. Action: sayedPdf. SL.pdf.sayed(wid, D) → {blob, pages, name}. */
+ * Arabic (right to left) whatever the viewer's language, on ONE A5 page (sent by phone: an A5 page shows its print
+ * about 1.4× the size of an A4 one; Ryan, 19 Oct: "it needs to be a one-pager"). It tells the story in four coloured
+ * blocks (got from Ryan, paid out per kind, should have, the last count and its difference), as big as one page holds
+ * (X.onePage). Figures as of the as-of date, from M.floatReceipt (the "Sayed's money" box; its lines, M.floatLedger,
+ * check it to the halala in X.sayedData), right-aligned (ones under ones), with .00 on every figure of a block when one
+ * has halalas. Arabic words only: no free-text notes (Ryan's are internal and in English); a name or tag with no Arabic
+ * gives way to its Arabic. Drawn with the 72-pdf kit. Action: sayedPdf. SL.pdf.sayed(wid, D) → {blob, pages, name}. */
 
 /* ---- chunk 1: the figures (the model only; no canvas) ---- */
 (function (SL) {
@@ -19179,7 +19210,7 @@ window.SL = window.SL || {};
       if (!f.h) continue;
       const row = { date: f.date, h: Math.abs(f.h), name: "", tag: "" };
       if (f.cashId) {
-        if (f.ctype === "topup") row.name = owner;
+        if (f.ctype === "topup") row.name = f.from || owner;
         else if (f.ctype === "return") row.name = U.L("Gave back to ", "رجّعت ل") + owner;
         else { row.name = f.h > 0 ? U.L("Other money in", "فلوس ثانية دخلت") : U.L("Other money out", "فلوس طلعت من العهدة"); row.tag = tagOf.get(f.cashId) || ""; }
         (f.h > 0 ? got : back).push(row);
@@ -19198,8 +19229,6 @@ window.SL = window.SL || {};
       X.SG.some((g) => sum(spent[g.k]) !== U.sum(g.cats, (c) => r.paidCat[c]))) M.idFail("sayedPdf:" + wid, d);
     return d;
   };
-  /** Any line to list (else the PDF is the story alone). */
-  X.sHasLines = (d) => !!(d.got.length || d.back.length || X.SG.some((g) => d.spent[g.k].length));
 })(window.SL);
 
 /* ---- chunk 2: the story in five coloured blocks (X.sBlocks: what they say; X.sPage1: drawn) ---- */
@@ -19294,179 +19323,124 @@ window.SL = window.SL || {};
     return hgt;
   };
 
-  /** The yellow block: should have = got − paid, the sum as two lines under it. Paid out more than he got: said so
-   *  (never "from your own pocket": the book may be missing money in). */
+  /** The yellow block: should have = all in − all out (the T table's two totals, right above it). Paid out more than
+   *  he got: said so (never "from your own pocket": the book may be missing money in). */
   X.sShould = (d) => {
-    const r = d.r, more = r.adjIn || r.refunds || r.returns || r.adjOut;
-    const sum = more ? [{ label: U.L("All in", "اللي دخل"), h: d.inTotal }, { label: U.L("minus all out", "ناقص اللي طلع"), h: d.outTotal }]
-      : [{ label: U.L("You got", "استلمت"), h: r.topups }, { label: U.L("minus you paid", "ناقص صرفت"), h: r.paidOut }];
-    return r.holds >= 0 ? { k: K.yellow, label: U.L("You should have", "المفروض يكون معك"), h: r.holds, lines: sum }
-      : { k: K.yellow, label: U.L("You paid more than you got", "صرفت أكثر من اللي استلمته"), h: -r.holds, lines: sum };
+    const r = d.r;
+    return r.holds >= 0 ? { k: K.yellow, label: U.L("You should have", "المفروض يكون معك"), h: r.holds, lines: [] }
+      : { k: K.yellow, label: U.L("You paid more than you got", "صرفت أكثر من اللي استلمته"), h: -r.holds, lines: [] };
   };
 
-  /** What the blocks say for d (X.sayedData), no drawing: green got · red paid out (groups with money in them) · yellow
-   *  should have (the sum under it) · blue counted · orange the difference (the last two once he has counted). The
-   *  difference is the one saved with the count (as on the Float page), against the book then, said in words either
-   *  sign; then why (money came in that isn't written down, or spending isn't / money is missing); then how the book
-   *  changed since the count (dated after it, or written after it for its day or earlier), in and out: the book then
-   *  + in − out = what he should have now. */
+  /** The blocks under the T table for d (X.sayedData), no drawing: yellow should have · orange the last count (once he
+   *  has counted): its day, what the book said then and what he counted, the difference (the one saved with the count,
+   *  as on the Float page) as its figure, said in words either sign; then why (money came in that isn't written down,
+   *  or spending isn't / money is missing); then how the book changed since the count (dated after it, or written after
+   *  it for its day or earlier), in and out: the book then + in − out = what he should have now. */
   X.sBlocks = (d) => {
-    const r = d.r, c = r.count, bl = [];
-    const gl = [];
-    for (const a of d.adj) if (a.h > 0) gl.push({ label: U.L("Other money in", "فلوس ثانية دخلت") + (a.tag ? " · " + a.tag : ""), h: a.h, indent: true });
-    if (r.refunds) gl.push({ label: U.L("Money back (refunds, deposits)", "فلوس رجعت لك (تأمين أو مرتجع)"), h: r.refunds, indent: true });
-    if (gl.length) gl.push({ label: U.L("All the money you got", "كل اللي دخل معك"), h: d.inTotal, bold: true, rule: true, opt: true });
-    bl.push({ k: K.green, label: U.L("You got from ", "استلمت من ") + d.owner, h: r.topups, lines: gl });
-    const rl = X.SG.map((g) => ({ label: g.label(), h: U.sum(g.cats, (k) => r.paidCat[k]), indent: true })).filter((l) => l.h);
-    if (r.returns) rl.push({ label: U.L("Gave back to ", "رجّعت ل") + d.owner, h: r.returns, rule: true });
-    if (r.adjOut) rl.push({ label: U.L("Other money out", "فلوس طلعت من العهدة"), h: r.adjOut, rule: !r.returns });
-    if (r.returns || r.adjOut) rl.push({ label: U.L("All the money that went out", "كل اللي طلع منك"), h: d.outTotal, bold: true, rule: true, opt: true });
-    bl.push({ k: K.red, label: U.L("You paid", "صرفت"), h: r.paidOut, lines: rl });
-    bl.push(X.sShould(d));
+    const c = d.r.count, bl = [X.sShould(d)];
     if (!c) return bl;
-    bl.push({ k: K.blue, label: U.L("You counted", "عدّيت"), h: c.counted, lines: [{ label: U.L("On ", "يوم ") + U.dShort(c.date) }] });
     // since the count the book moved (dated after it, or written after it for its day or earlier): in / out, so the
     // book then + in − out = what he should have now
     const inn = c.since.in + Math.max(0, c.late), out = c.since.out + Math.max(0, -c.late), after = [];
-    if (inn || out) after.push({ label: U.L("Since the count the book changed:", "بعد العدّ تغيّر الحساب:"), rule: true });
-    if (inn) after.push({ label: U.L("came in", "دخل"), h: inn, indent: true });
-    if (out) after.push({ label: U.L("went out", "طلع"), h: out, indent: true });
+    if (inn) after.push({ label: U.L("came in since the count", "دخل بعد الجرد"), h: inn, rule: true });
+    if (out) after.push({ label: U.L("went out since the count", "طلع بعد الجرد"), h: out, rule: !inn });
+    const day = { label: U.L("Count on ", "الجرد يوم ") + U.dShort(c.date) }, counted = { label: U.L("you counted", "وانت عدّيت"), h: c.counted, indent: true };
     const lbl = U.L("The difference", "الفرق");
-    if (!c.diff) return bl.concat([{ k: K.orange, label: lbl, txt: U.L("Matches ✓", "مضبوط ✓"), lines: [{ label: U.L("What you counted matched the book", "اللي عدّيته كان نفس الحساب") }].concat(after) }]);
-    const ol = [{ label: U.L("At the count the book said:", "وقت العدّ الحساب كان:") },
-      c.book >= 0 ? { label: U.L("you should have", "المفروض معك"), h: c.book, indent: true } : { label: U.L("you paid more by", "صرفت زيادة"), h: -c.book, indent: true },
-      { label: U.L("and you counted", "وانت عدّيت"), h: c.counted, indent: true },
-      c.diff > 0 ? { label: U.L("So money came in that isn't written down.", "يعني فيه فلوس دخلت معك وما انكتبت."), rule: true }
-        : { label: U.L("So spending isn't written down, or money is missing.", "يعني مصاريف ما انكتبت، أو فلوس ناقصة."), rule: true },
-      { label: c.diff > 0 ? U.L("Tell us where it came from.", "قول لنا من وين.") : U.L("Tell us where it went.", "قول لنا وين راحت.") }];
+    if (!c.diff) return bl.concat([{ k: K.orange, label: lbl, txt: U.L("Matches ✓", "مضبوط ✓"), lines: [day, counted, { label: U.L("What you counted matched the book", "اللي عدّيته كان نفس الحساب") }].concat(after) }]);
+    const ol = [day,
+      c.book >= 0 ? { label: U.L("the book said you should have", "الحساب: المفروض معك"), h: c.book, indent: true } : { label: U.L("the book said you paid more by", "الحساب: صرفت زيادة"), h: -c.book, indent: true },
+      counted,
+      c.diff > 0 ? { label: U.L("So money came in that isn't written down. Tell us where it came from.", "يعني فيه فلوس دخلت معك وما انكتبت. قول لنا من وين."), rule: true }
+        : { label: U.L("So spending isn't written down, or money is missing. Tell us where it went.", "يعني مصاريف ما انكتبت، أو فلوس ناقصة. قول لنا وين راحت."), rule: true }];
     return bl.concat([{ k: K.orange, label: lbl, h: Math.abs(c.diff), lines: ol.concat(after) }]);
   };
 
-  /** The story pages for d: title and date, then the blocks. The roomiest spacing that fits one page; short of room,
-   *  the in / out totals go if that makes it fit (the yellow block says them); else every line stays, at the closest
-   *  spacing, and the blocks that don't fit carry on to the next page (got, paid, should have first; then the count). */
+  /** The T table for d (Ryan, 19 Oct: "one side in and one side out"). The reading side: every line of money in, oldest
+   *  first (from Ryan by day, other money in, money back). The other side: money out per kind (crews · invoices and
+   *  materials · equipment · other, the kinds with money in them) with its total, then who got it (summed per name,
+   *  biggest first), then what he gave back or let out of the float. → {in: [{day, label, h}], out: [{label, h, head,
+   *  day}], inTotal, outTotal}; the sides add up to the receipt (X.sayedData checks the lines against it). */
+  X.sT = (d) => {
+    const r = d.r, lbl = (x) => x.name + (x.tag ? " · " + x.tag : "");
+    const per = (rows) => {
+      const m = new Map();
+      for (const x of rows) { const k = x.name || x.tag || U.L("Payment", "دفعة"), e = m.get(k); if (e) e.h += x.h; else m.set(k, { label: k, h: x.h }); }
+      return [...m.values()].sort((a, b) => b.h - a.h);
+    };
+    const out = [];
+    for (const g of X.SG) {
+      const rows = d.spent[g.k];
+      if (rows.length) out.push({ label: g.label(), h: U.sum(rows, (x) => x.h), head: true }, ...per(rows));
+    }
+    if (d.back.length) {
+      const head = r.returns && r.adjOut ? U.L("Given back, or other money out", "رجّعته أو طلع من العهدة") : r.returns ? U.L("Given back to ", "رجّعت ل") + d.owner : U.L("Other money out", "فلوس طلعت من العهدة");
+      out.push({ label: head, h: r.returns + r.adjOut, head: true }, ...d.back.map((x) => ({ day: X.sDay(x.date), label: lbl(x), h: x.h })));
+    }
+    return { in: d.got.map((x) => ({ day: X.sDay(x.date), label: lbl(x), h: x.h })), out, inTotal: d.inTotal, outTotal: d.outTotal };
+  };
+
+  // T table metrics (pt, before X.onePage's scale): header · row · totals row · text · header text · cell padding · stem gap
+  const TH = 36, TR = 27, TT = 34, TF = 17, THF = 20, TP = 8, TG = 12;
+  /** Draws t (X.sT) at y; returns its height. Each side's figures are right-aligned (ones under ones) at its far end. */
+  X.sTable = (pg, y, t) => {
+    const cw = (X.CW - TG) / 2, n = Math.max(1, t.in.length, t.out.length), body = TH + n * TR, h = body + TT;
+    const sides = [
+      { x: X.MX, k: K.green, title: U.L("Money in", "اللي دخل"), rows: t.in, total: t.inTotal },
+      { x: X.MX + cw + TG, k: K.red, title: U.L("Money out", "اللي طلع"), rows: t.out, total: t.outTotal },
+    ];
+    for (const s of sides) {
+      const dec = X.sDec(s.rows.map((r) => r.h).concat([s.total]));
+      const aw = Math.max(...s.rows.map((r) => X.width(pg, X.sn(r.h, dec), { size: TF, weight: r.head ? 700 : 600, num: true })), X.width(pg, X.sn(s.total, dec), { size: TF + 1, weight: 700, num: true }));
+      const pl = X.px(pg, s.x, cw), R = pg.rtl ? pl + TP + aw : pl + cw - TP, room = cw - 2 * TP - aw - 10;
+      X.rrect(pg, s.x, y, cw, TH, 8, s.k.bg, s.k.edge);
+      X.text(pg, s.title, s.x + TP, y + TH / 2 + THF * 0.36, { size: THF, weight: 700, color: s.k.ink, maxW: cw - 2 * TP });
+      s.rows.forEach((r, i) => {
+        const ry = y + TH + i * TR, by = ry + TR / 2 + TF * 0.36;
+        if (r.head) X.rect(pg, s.x, ry + 1, cw, TR - 2, s.k.bg);
+        let x = s.x + TP + (r.head ? 0 : 4), w = room - (r.head ? 0 : 4);
+        if (r.day) { const dw = X.text(pg, r.day, x, by, { size: TF - 2, color: C.ink2, num: true }) + 8; x += dw; w -= dw; }
+        X.text(pg, r.label, x, by, { size: TF, weight: r.head ? 700 : 500, color: r.head ? s.k.ink : C.ink, maxW: Math.max(20, w) });
+        X.sRight(pg, X.sn(r.h, dec), R, by, { size: TF, weight: r.head ? 700 : 600, color: r.head ? s.k.ink : C.ink, num: true });
+        if (!r.head) X.hline(pg, s.x + TP, ry + TR, cw - 2 * TP, C.line, 0.5);
+      });
+      if (!s.rows.length) X.text(pg, "–", s.x + TP, y + TH + TR / 2 + TF * 0.36, { size: TF, color: C.ink3 });
+      // the total, level on both sides, under a rule
+      X.hline(pg, s.x, y + body + 2, cw, s.k.ink, 1.2);
+      const ty = y + body + TT / 2 + 4;
+      X.text(pg, U.L("Total", "المجموع"), s.x + TP, ty, { size: TF + 1, weight: 700, color: s.k.ink, maxW: room });
+      X.sRight(pg, X.sn(s.total, dec), R, ty, { size: TF + 1, weight: 700, color: s.k.ink, num: true });
+    }
+    // the T's stem, between the sides
+    X.vline(pg, X.MX + cw + TG / 2, y + 4, h - 4, C.ink2, 1.2);
+    return h;
+  };
+
+  /** The page for d: title and date, the T table, then what he should have and his last count. When it runs past the
+   *  page, the blocks carry on to a next page, which tells X.onePage to try it all a little smaller. */
   X.sPage1 = (doc, d) => {
     const bl = X.sBlocks(d);
     let pg = X.page(doc);
     pg.title = U.L("Float account — ", "حساب العهدة — ") + d.who;
     X.text(pg, pg.title, X.MX, 50, { size: 26, weight: 700, maxW: X.CW });
     X.text(pg, U.L("Up to ", "لغاية يوم ") + U.dLong(d.D), X.MX, 77, { size: 17, color: C.ink2, maxW: X.CW });
+    let y = 92 + X.sTable(pg, 92, X.sT(d)) + 14;
     bl.forEach((b) => X.sWrap(pg, b));
-    const top = 92, room = X.PH - X.MB - top, tiers = [[32, 14], [30, 12], [28, 10]];
-    const need = (lh, gap, short) => U.sum(bl, (b) => X.sBlockH(pg, short ? Object.assign({}, b, { lines: b.lines.filter((l) => !l.opt) }) : b, lh)) + gap * (bl.length - 1);
-    let fit = tiers.find(([lh, gap]) => need(lh, gap) <= room);
-    if (!fit) { fit = tiers.find(([lh, gap]) => need(lh, gap, true) <= room); if (fit) bl.forEach((b) => (b.lines = b.lines.filter((l) => !l.opt))); }
-    fit = fit || tiers[tiers.length - 1]; // more than a page anyway: every line, packed close, the rest on the next page
-    let y = top;
     for (const b of bl) {
-      if (y + X.sBlockH(pg, b, fit[0]) > X.PH - X.MB) { pg = X.more(doc, pg.title); y = pg.y + 6; }
-      y += X.sBlock(pg, y, b, fit[0]) + fit[1];
+      if (y + X.sBlockH(pg, b, 28) > X.PH - X.MB) { pg = X.more(doc, pg.title); y = pg.y + 6; }
+      y += X.sBlock(pg, y, b, 28) + 10;
     }
     pg.y = y;
-    if (X.room(pg) >= 30 && X.sHasLines(d)) X.text(pg, U.L("Every line is on the next pages.", "كل التفاصيل في الصفحات اللي بعدها."), X.MX, y + 16, { size: 17, color: C.ink2, maxW: X.CW });
     return pg;
   };
 })(window.SL);
 
-/* ---- chunk 3: the details pages, the file, the action ---- */
+/* ---- chunk 3: the file (one page), the action ---- */
 (function (SL) {
   "use strict";
   const U = SL.util, M = SL.model, ui = SL.ui, A = SL.actions;
-  const X = SL._pdf, C = X.C, K = X.SK;
-  /** Big-print table: tall rows, 18 pt text centred in them; a tag that doesn't fit beside its name goes under it (16 pt). */
-  const TB = { rh: 34, size: 18, hh: 32, hsize: 16, pad: 8, mid: true, hfill: "#F1F1EC", hcolor: C.ink2, noteSize: 16, noteH: 19 };
-  /** The day and amount columns, as wide as their widest text over every section (so they line up page to page). */
-  const widths = (pg, d) => {
-    const all = d.got.concat(d.back, ...X.SG.map((g) => d.spent[g.k]));
-    const hs = all.map((x) => x.h).concat([d.inTotal, d.r.paidOut, d.r.returns + d.r.adjOut], X.SG.map((g) => U.sum(d.spent[g.k], (x) => x.h)));
-    const dw = Math.max(X.width(pg, U.L("Day", "اليوم"), { size: TB.hsize, weight: 700 }), ...all.map((x) => X.width(pg, X.sDay(x.date), { size: TB.size, num: true })));
-    const aw = Math.max(X.width(pg, U.L("Amount", "المبلغ"), { size: TB.hsize, weight: 700 }), ...hs.map((h) => X.width(pg, X.sn(h, true), { size: TB.size + 0.6, weight: 700, num: true })));
-    return { DW: Math.ceil(dw) + 2 * TB.pad + 2, AW: Math.ceil(aw) + 2 * TB.pad + 2 };
-  };
-  /** s cut after a whole word (else a letter) with "…" to fit w, in the context's current font. */
-  const cut = (ctx, s, w) => {
-    if (ctx.measureText(s).width <= w) return s;
-    const ws = s.split(/\s+/);
-    for (let n = ws.length - 1; n >= 1; n--) { const t = ws.slice(0, n).join(" ").replace(/[\s,،·]+$/, "") + "…"; if (ctx.measureText(t).width <= w) return t; }
-    return X.fit(ctx, s, w);
-  };
-  /** Who and what for in w: "name · tag" on one line when it fits, else the name on its line and the tag (a crew's
-   *  week, what a bill was for) whole on a second line under it → {main, note}. Neither is cut unless it alone is
-   *  wider than w. */
-  const pair = (pg, name, tag, w) => {
-    const ctx = pg.ctx, sep = " · ";
-    ctx.font = X.font(TB.size, 600);
-    if (!tag || !name) return { main: cut(ctx, name || tag || "", w), note: "" };
-    if (ctx.measureText(name + sep + tag).width <= w) return { main: name + sep + tag, note: "" };
-    const main = cut(ctx, name, w);
-    ctx.font = X.font(TB.noteSize, 600);
-    return { main, note: cut(ctx, tag, w) };
-  };
-  const line = (pg, x, k, w, dec) => {
-    const p = pair(pg, x.name, x.tag, w);
-    const r = { cells: [X.sDay(x.date), p.main, X.sn(x.h, dec)], nums: [true, false, true], weights: [400, 600, 700], colors: [C.ink2, C.ink, k.ink] };
-    if (p.note) Object.assign(r, { note: p.note, noteAt: 1, noteColor: C.ink2, noteWeight: 600 });
-    return r;
-  };
-  const total = (label, h, k, dec) => ({ kind: "total", cells: ["", label, X.sn(h, dec)], fill: "#FFFFFF", line: k.ink, colors: ["", k.ink, k.ink] });
-  /** Lines then their total; the last line keeps its total with it (a total never starts a page alone). */
-  const withTotal = (lines, tot) => { if (lines.length) lines[lines.length - 1].keep = 1.1; return lines.concat([tot]); };
-  /** A section's coloured band: its name and total, kept with the first rows of its table. A table that carries on
-   *  names the section on its next page ("التفاصيل — اللي صرفته (تابع)"). */
-  const band = (pg, k, label, h, base) => {
-    pg.title = base;
-    pg = X.need(pg, 64 + TB.hh + TB.rh * 3 + 4); // the band, the header, a group's name and its first two lines
-    const y = pg.y + 10;
-    X.rrect(pg, X.MX, y, X.CW, 46, 12, k.bg, k.edge);
-    const wm = X.sMoney(pg, h, X.sEnd() - 14, y + 31, 22, k.ink);
-    X.text(pg, label, X.MX + 14, y + 31, { size: 21, weight: 700, color: k.ink, maxW: X.CW - 28 - wm - 12 });
-    pg.y = y + 54;
-    pg.title = base + " — " + label;
-    return pg;
-  };
+  const X = SL._pdf, C = X.C;
 
-  /** The details pages: the money he got (from Ryan, other money in, money back), what he paid (crews, invoices and
-   *  materials, equipment, other: each line, a total per group), what he gave back; then what he should have, again.
-   *  Columns: day (26/9) · to whom (and what for) · amount. */
-  X.sDetails = (doc, d) => {
-    let pg = X.page(doc);
-    const base = U.L("The details", "التفاصيل");
-    pg.title = base;
-    X.text(pg, base, X.MX, 50, { size: 26, weight: 700, maxW: X.CW });
-    X.text(pg, U.L("Every riyal in and out, up to ", "كل ريال دخل أو طلع، لغاية ") + U.dShort(d.D), X.MX, 77, { size: 17, color: C.ink2, maxW: X.CW });
-    pg.y = 84;
-    const cw = widths(pg, d), w = X.CW - cw.DW - cw.AW - 2 * TB.pad;
-    const cols = (who) => [{ label: U.L("Day", "اليوم"), w: cw.DW }, { label: who, w: "*" }, { label: U.L("Amount", "المبلغ"), w: cw.AW, num: true }];
-    if (d.got.length) {
-      const dec = X.sDec(d.got.map((x) => x.h).concat([d.inTotal]));
-      pg = band(pg, K.green, U.L("Money you got", "الفلوس اللي استلمتها"), d.inTotal, base);
-      pg = X.table(pg, cols(U.L("From", "من مين")), withTotal(d.got.map((x) => line(pg, x, K.green, w, dec)), total(U.L("Total", "المجموع"), d.inTotal, K.green, dec)), TB);
-    }
-    const groups = X.SG.filter((g) => d.spent[g.k].length);
-    if (groups.length) {
-      const dec = X.sDec([].concat(...groups.map((g) => d.spent[g.k].map((x) => x.h))));
-      pg = band(pg, K.red, U.L("What you paid", "اللي صرفته"), d.r.paidOut, base);
-      const rows = [];
-      for (const g of groups) {
-        rows.push({ kind: "group", cells: [g.label()], span: 3, fill: K.red.bg, colors: [K.red.ink], keep: 2 });
-        rows.push(...withTotal(d.spent[g.k].map((x) => line(pg, x, K.red, w, dec)), total(U.L("Total ", "مجموع ") + g.label(), U.sum(d.spent[g.k], (x) => x.h), K.red, dec)));
-      }
-      pg = X.table(pg, cols(U.L("To whom", "لمين")), rows, TB);
-    }
-    if (d.back.length) {
-      const r = d.r, h = r.returns + r.adjOut, dec = X.sDec(d.back.map((x) => x.h).concat([h]));
-      const lbl = r.returns && r.adjOut ? U.L("Given back, or other money out", "رجّعته أو طلع من العهدة") : r.returns ? U.L("Given back to ", "رجّعته ل") + d.owner : U.L("Other money out", "فلوس طلعت من العهدة");
-      pg = band(pg, K.red, lbl, h, base);
-      pg = X.table(pg, cols(U.L("What", "إيش")), withTotal(d.back.map((x) => line(pg, x, K.red, w, dec)), total(U.L("Total", "المجموع"), h, K.red, dec)), TB);
-    }
-    // the answer again under the lines it comes from, when it fits (the story has it; never a page of its own)
-    pg.title = base;
-    const b = X.sWrap(pg, X.sShould(d)), h = X.sBlockH(pg, b, 30);
-    if (X.room(pg) >= h + 12) { X.sBlock(pg, pg.y + 10, b, 30); pg.y += h + 10; }
-    return pg;
-  };
-
-  /** A page that carries on: the section's name, "(continued)". */
+  /** A page that carries on (only in X.onePage's dry runs: a second page means "smaller"). */
   const more = (doc, title) => {
     const pg = X.page(doc);
     pg.title = title;
@@ -19474,24 +19448,27 @@ window.SL = window.SL || {};
     pg.y = 58;
     return pg;
   };
-  const foot = (pg, i, n, d) => {
+  const foot = (pg, d) => {
     const y = X.PH - 16;
     X.hline(pg, X.MX, y - 15, X.CW, C.line, 0.6);
-    X.text(pg, U.L("Page " + i + " of " + n, "صفحة " + i + " من " + n), X.MX, y, { size: 12, weight: 600, color: C.ink3 });
+    X.text(pg, U.L("All amounts in SAR", "كل المبالغ بالريال"), X.MX, y, { size: 12, weight: 600, color: C.ink3 });
     X.text(pg, U.L("Float account — ", "حساب العهدة — ") + d.who + " · " + U.dShort(d.D), X.sEnd(), y, { size: 12, color: C.ink3, align: "end", maxW: X.CW * 0.58 });
   };
 
-  /** Draw the pages (always Arabic, A5) and wrap them in a PDF → {blob, pages, name}. Figures as of D. */
+  /** Draw the page (always Arabic, one A5 sheet, as big as it fits) and wrap it in a PDF → {blob, pages, name}. Figures as of D. */
   X.buildSayed = async (wid, D) => {
     await X.fonts();
-    const doc = X.asAr(() => X.withSize(X.A5, () => {
-      const d = X.sayedData(wid, D), doc = { wid, D, pages: [], more };
-      X.sPage1(doc, d);
-      if (X.sHasLines(d)) X.sDetails(doc, d);
-      doc.pages.forEach((pg, i) => foot(pg, i + 1, doc.pages.length, d));
+    const doc = X.asAr(() => {
+      const d = X.sayedData(wid, D);
+      const { doc } = X.onePage(() => {
+        const doc = { wid, D, pages: [], more };
+        X.sPage1(doc, d);
+        doc.pages.forEach((pg) => foot(pg, d));
+        return doc;
+      }, X.A5);
       doc.info = { title: U.L("Float account — ", "حساب العهدة — ") + d.who + " · " + D, author: d.owner, subject: U.L("What you got, what you paid, what you should have", "اللي استلمته واللي صرفته واللي المفروض يكون معك") };
       return doc;
-    }));
+    });
     const out = [];
     for (const pg of doc.pages) { out.push(await X.encode(pg.c)); pg.c.width = 0; pg.c.height = 0; } // free each canvas once encoded
     return { blob: X.pdf(out, doc.info), pages: out.length, name: X.sayedFileName(wid, D) };
@@ -19525,6 +19502,179 @@ window.SL = window.SL || {};
   /** For Claude Code: SL.pdf.sayed(wid, D) → {blob, pages, name}. */
   SL.pdf = SL.pdf || {};
   SL.pdf.sayed = (wid, D) => X.buildSayed(wid || M.projectFloat(ui.pid()) || M.defaultWallet(ui.pid()), D || ui.D());
+})(window.SL);
+
+/* ---- 75-pdf-budget.js ---- */
+/* ---- 75-pdf-budget.js ---- */
+/* 75-pdf-budget: "⤓ Budget, 1 page" (Balances and Report). The whole project's money on ONE A4 page (Ryan, 19 Oct: "a
+ * budget one-pager that has all the suppliers listed, the crews listed, the equipment rentals listed and the one-offs
+ * lump sums"), in the viewer's language, figures as of the as-of date, as big as one page holds (X.onePage).
+ * Four sections, one line each: suppliers (purchases and services from a supplier on file, summed per supplier) ·
+ * crews (summed per crew: weeks, master and laborer days; a cost tagged to a crew counts with it) · equipment (each
+ * rental line and deposit) · one-offs (each cost with no supplier on file: lump sums like the aluminium doors or the
+ * concrete pour, and placeholders). Columns: cost to date (delivered / done) · paid · owed (or +paid ahead). The four
+ * sections add up to the project's totals to the halala (else M.identityFailures). Drawn with the 72-pdf kit.
+ * Action: budgetPdf. SL.pdf.budget(pid, D) → {blob, pages, name}. */
+
+/* ---- chunk 1: the figures (the model only; no canvas) ---- */
+(function (SL) {
+  "use strict";
+  const U = SL.util, M = SL.model;
+  const X = (SL._pdf = SL._pdf || {});
+  const z = () => ({ inc: 0, paid: 0, owed: 0, ahead: 0 });
+  const add = (t, r) => { t.inc += r.inc; t.paid += r.paid; t.owed += r.owed; t.ahead += r.prepaid; };
+  /** Tags of several units, the most money first, at most n ("thinner, primer, paint"). */
+  const topTags = (us, n) => {
+    const m = new Map();
+    for (const u of us) for (const t of M.forTags(u)) m.set(t, (m.get(t) || 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map((e) => e[0]);
+  };
+  const join = (ts) => ts.join(U.L(", ", "، "));
+  /** A rental line's terms: its shop, its rate ("5/day", or "no price"), its days on site ("22/9 – 6/10"). */
+  const rentWhat = (u) => {
+    if (u.deposit) return U.L("refundable, held by the shop", "مسترد، عند المحل");
+    const rate = u.noPrice ? U.L("no price", "بلا سعر") : U.m(u.rate, { plain: true }).replace(/\.00$/, "") + (u.doc.rateUnit === "month" ? U.L("/month", "/شهر") : U.L("/day", "/يوم"));
+    const dd = (s) => (s ? U.dDM(s) : "");
+    const parts = [rate, u.in ? dd(u.in) + " – " + (u.out ? dd(u.out) : U.L("on site", "في الموقع")) : ""];
+    // the shop first in English; last in Arabic, so a Latin name never sets the line's direction
+    return (U.isAr() ? parts.concat([u.payee]) : [u.payee].concat(parts)).filter(Boolean).join(" · ");
+  };
+
+  /** The page's figures for project pid as of D → {pid, D, sections: [{k, label, rows: [{name, what, inc, paid, owed,
+   *  ahead}], t}], t (all), budget (halalas, 0 = none), committed}. A line counts when it has cost, payments or (a
+   *  rental) is on site by D. */
+  X.budgetData = (pid, D) => {
+    const sups = new Map(), crews = new Map(), eq = [], one = [];
+    for (const u of M.unitsFor(pid)) {
+      if (u.archived) continue;
+      const r = M.calc(u, D);
+      const onSite = u.kind === "rental" && !u.deposit && (!u.in || u.in <= D); // here by D (an unpriced line costs 0 but is listed)
+      if (!r.inc && !r.paid && !r.owed && !onSite) continue;
+      if (u.kind === "rental") { const t = z(); add(t, r); eq.push(Object.assign({ name: u.title, what: rentWhat(u), u }, t)); continue; }
+      const cid = u.kind === "crew" ? u.crewId : u.crewId || "";
+      if (cid) {
+        const e = crews.get(cid) || Object.assign({ name: M.crewName(cid), weeks: new Set(), m: 0, l: 0, extra: 0 }, z());
+        add(e, r);
+        if (u.kind === "crew") { e.weeks.add(u.weekStart); for (const d of u.days) if (!d.plan && d.date <= D) { e.m += d.m; e.l += d.l; } } else e.extra++;
+        crews.set(cid, e);
+        continue;
+      }
+      const sid = u.doc.supplierId;
+      if (sid && (u.kind === "purchase" || u.kind === "service")) {
+        const s = M.suppliers()[sid], e = sups.get(sid) || Object.assign({ name: (s && U.nm(s)) || String(u.doc.supplier || "").trim() || sid, us: [] }, z());
+        add(e, r); e.us.push(u); sups.set(sid, e);
+        continue;
+      }
+      const t = z(); add(t, r);
+      const c = u.doc, name = (U.isAr() && c.ar) || c.desc || u.title;
+      one.push(Object.assign({ name, what: [U.dDM(u.date), M.jobCode(u.jobId) || "", c.placeholder ? U.L("invoices to follow", "الفواتير لاحقاً") : ""].filter(Boolean).join(" · "), u }, t));
+    }
+    const big = (a, b) => b.inc + b.ahead - (a.inc + a.ahead) || String(a.name).localeCompare(String(b.name));
+    const supRows = [...sups.values()].map((e) => Object.assign(e, { what: X.plural(e.us.length, "invoice", "invoices", "فاتورة واحدة", "فاتورتان", "فواتير", "فاتورة") + (topTags(e.us, 3).length ? " · " + join(topTags(e.us, 3)) : "") }));
+    const crewRows = [...crews.values()].map((e) => Object.assign(e, { what: [X.plural(e.weeks.size, "week", "weeks", "أسبوع واحد", "أسبوعان", "أسابيع", "أسبوعاً"),
+      e.m || e.l ? U.L(e.m + " master · " + e.l + " laborer days", e.m + " يوم معلم · " + e.l + " يوم عامل") : "", e.extra ? U.L("+ other costs", "+ تكاليف أخرى") : ""].filter(Boolean).join(" · ") }));
+    const sections = [
+      { k: "P", label: U.L("Suppliers", "الموردون"), rows: supRows.sort(big) },
+      { k: "T", label: U.L("Crews", "العمالة"), rows: crewRows.sort(big) },
+      { k: "E", label: U.L("Equipment rental", "إيجار المعدات"), rows: eq.sort(big) },
+      { k: "O", label: U.L("One-offs and lump sums", "مبالغ مقطوعة لمرة واحدة"), rows: one.sort(big) },
+    ].filter((s) => s.rows.length);
+    const all = z();
+    for (const s of sections) { s.t = z(); for (const x of s.rows) { s.t.inc += x.inc; s.t.paid += x.paid; s.t.owed += x.owed; s.t.ahead += x.ahead; } for (const f in all) all[f] += s.t[f]; }
+    const pt = M.totals(M.unitsFor(pid).filter((u) => !u.archived), D), p = M.project(pid) || {}; // as on Balances: archived costs left out
+    if (all.inc !== pt.cost || all.paid !== pt.paid || all.owed !== pt.owed || all.ahead !== pt.prepaid) M.idFail("budgetPdf:" + pid, { all, pt });
+    return { pid, D, sections, t: all, budget: p.budget > 0 ? U.hal(p.budget) : 0, committed: (M.committed(pid) || {}).total || 0 };
+  };
+})(window.SL);
+
+/* ---- chunk 2: the page, the file, the action, the button ---- */
+(function (SL) {
+  "use strict";
+  const U = SL.util, M = SL.model, ui = SL.ui, A = SL.actions;
+  const X = SL._pdf, C = X.C;
+
+  /** The page for b (X.budgetData): title, the four figures, one table (a band per section with its totals, a line per
+   *  supplier / crew / rental / one-off), the grand total and a note. */
+  X.pBudget = (doc, b) => {
+    const w = X.m2, pg = X.page(doc), t = b.t;
+    X.band(pg);
+    pg.title = doc.project + " · " + U.L("Budget on one page", "الميزانية في صفحة واحدة");
+    X.text(pg, pg.title, X.MX, 50, { size: 18, weight: 700, maxW: X.CW });
+    X.text(pg, U.L("As of ", "حتى تاريخ ") + doc.asOfTxt + U.L(" · all amounts SAR incl. VAT", " · كل المبالغ بالريال شاملة الضريبة"), X.MX, 64, { size: 8.5, color: C.ink2, maxW: X.CW });
+    pg.y = 70;
+    const tiles = [
+      { label: U.L("Cost to date", "التكلفة حتى اليوم"), txt: X.mw(t.inc), color: C.ink, sub: b.budget ? U.L("of budget ", "من الميزانية ") + X.mw(b.budget) + " · " + Math.round((t.inc / b.budget) * 100) + "%" : "" },
+      { label: U.L("Paid", "المدفوع"), txt: X.mw(t.paid), color: C.info },
+      { label: U.L("Owed", "المستحق"), txt: X.mw(t.owed), color: C.owed, vcolor: t.owed ? C.owed : C.ink },
+      { label: U.L("Paid ahead", "مدفوع مقدماً"), txt: X.mw(t.ahead), color: C.prepaid, vcolor: t.ahead ? C.prepaid : C.ink, sub: b.committed ? U.L("committed quotes ", "عروض ملتزم بها ") + X.mw(b.committed) : "" },
+    ];
+    let p = X.tiles(pg, tiles);
+    const owedTxt = (x) => (x.owed ? w(x.owed) : x.ahead ? "+" + w(x.ahead) : "–"), owedCol = (x) => (x.owed ? C.owed : x.ahead ? C.prepaid : C.ink3);
+    const rows = [];
+    for (const s of b.sections) {
+      rows.push({ kind: "group", span: 2, keep: 1, cells: [s.label + "  ·  " + s.rows.length, "", w(s.t.inc), w(s.t.paid), owedTxt(s.t)], colors: [C.ink, "", C.ink, C.ink, owedCol(s.t)] });
+      for (const x of s.rows) rows.push({ cells: [x.name, x.what, x.inc ? w(x.inc) : "–", x.paid ? w(x.paid) : "–", owedTxt(x)], colors: [C.ink, C.ink2, x.inc ? C.ink : C.ink3, x.paid ? C.ink : C.ink3, owedCol(x)], weights: [600, 400], nums: [false, false] });
+    }
+    rows.push({ kind: "total", cells: [U.L("Total", "الإجمالي"), "", w(t.inc), w(t.paid), owedTxt(t)], colors: [C.ink, "", C.ink, C.ink, owedCol(t)] });
+    p = X.table(p, [{ label: U.L("Who", "الجهة"), w: 158 }, { label: U.L("What for", "البيان"), w: "*" }, { label: U.L("Cost to date", "التكلفة"), w: 64, num: true },
+      { label: U.L("Paid", "مدفوع"), w: 64, num: true }, { label: U.L("Owed", "مستحق"), w: 60, num: true }], rows, { rh: 13.5, size: 7.6 });
+    X.note(p, U.L("Cost counts once delivered or done; paid before that shows as +paid ahead. One-offs are costs with no supplier on file (lump sums and placeholders).",
+      "تُحسب التكلفة عند التسليم أو التنفيذ، وما يُدفع قبل ذلك يظهر مدفوعاً مقدماً (+). المبالغ المقطوعة: تكاليف بلا مورد مسجَّل (مبالغ إجمالية ومبالغ مؤقتة)."));
+    return p;
+  };
+
+  /** Draw the page (one A4 sheet, as big as it fits) in the viewer's language and wrap it → {blob, pages, name}. */
+  X.buildBudget = async (pid, D) => {
+    await X.fonts();
+    const p = M.project(pid) || {}, b = X.budgetData(pid, D);
+    const { doc } = X.onePage(() => {
+      const doc = { pid, D, pages: [], project: (U.isAr() && p.ar) || p.name || pid, asOfTxt: X.dLong(D), madeTxt: X.dLong(U.ymd(new Date())), bandTxt: U.L("MIMAR · BUDGET", "معمار · الميزانية") };
+      X.pBudget(doc, b);
+      doc.pages.forEach((pg, i) => X.footer(pg, i + 1, doc.pages.length));
+      return doc;
+    });
+    const out = [];
+    for (const pg of doc.pages) { out.push(await X.encode(pg.c)); pg.c.width = 0; pg.c.height = 0; } // free each canvas once encoded
+    const blob = X.pdf(out, { title: ((U.isAr() && p.ar) || p.name || pid) + " · " + U.L("Budget", "الميزانية") + " · " + D, author: X.owner(), subject: U.L("Suppliers, crews, equipment rental and one-offs", "الموردون والعمالة وإيجار المعدات والمبالغ المقطوعة") });
+    return { blob, pages: out.length, name: X.budgetFileName(pid, D) };
+  };
+  /** "Manakh Hangers budget 2026-10-19.pdf" ("… (Arabic).pdf" in Arabic). */
+  X.budgetFileName = (pid, D) => {
+    const p = M.project(pid) || {}, base = String(p.name || "Mimar").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+    return base + " budget " + D + (U.isAr() ? " (Arabic)" : "") + ".pdf";
+  };
+
+  /** "⤓ Budget, 1 page": where the Investor PDF button shows (this view can draw pages and save files), not in a frozen
+   *  snapshot (it ships only the investor PDFs). */
+  X.budgetBtn = (cls) => {
+    if (X.snapPdfs().length || !X.canDraw() || !SL.S.downloads || (SL._admin && SL._admin.dlGone)) return "";
+    return `<button type="button" class="${cls || "chip"} pdf-btn" data-act="budgetPdf"${X.busy ? " disabled" : ""} title="${U.esc(U.L("The whole budget on one page: suppliers, crews, equipment and one-offs", "الميزانية كلها في صفحة واحدة: الموردون والعمالة والمعدات والمبالغ المقطوعة"))}">${X.busy && X.busyKind === "budget" ? U.L("Making PDF…", "جارٍ إنشاء PDF…") : U.L("⤓ Budget, 1 page", "⤓ الميزانية، صفحة واحدة")}</button>`;
+  };
+
+  A.budgetPdf = async () => {
+    if (X.busy) return;
+    if (!X.canDraw()) return ui.toast(U.L("The PDF can't be made in this view.", "لا يمكن إنشاء ملف PDF في هذا العرض."));
+    if (!SL.S.downloads) return ui.toast(U.L("Downloads aren't available here.", "التنزيل غير متاح هنا."));
+    const pid = ui.pid(), D = ui.D();
+    X.busy = true; X.busyKind = "budget"; ui.render();
+    try {
+      const r0 = await X.buildBudget(pid, D);
+      const r = await SL.store.download(r0.name, r0.blob);
+      if (r && r.ok) ui.toast(U.L("Budget PDF ready · as of " + U.dShort(D), "ملف الميزانية جاهز · حتى تاريخ " + U.dShort(D)));
+      else {
+        const o = SL._admin && SL._admin.dlOutcome ? SL._admin.dlOutcome(r) : { msg: U.L("Not saved.", "لم يُحفظ.") };
+        if (o.gone && SL._admin) SL._admin.dlGone = true; // saving can't run in this view: the buttons go
+        if (o.msg) ui.toast(U.esc(o.msg));
+      }
+    } catch (e) {
+      console.warn("[pdf]", e);
+      ui.toast(U.L("Couldn't make the PDF. Try again.", "تعذّر إنشاء ملف PDF. حاول مرة أخرى."));
+    } finally { X.busy = false; X.busyKind = ""; ui.render(); }
+  };
+
+  /** For Claude Code: SL.pdf.budget(pid, D) → {blob, pages, name}. */
+  SL.pdf = SL.pdf || {};
+  SL.pdf.budget = (pid, D) => X.buildBudget(pid || ui.pid(), D || ui.D());
 })(window.SL);
 
 /* ---- 99-boot.js ---- */
