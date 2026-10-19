@@ -362,6 +362,18 @@ img{max-width:100%}[hidden]{display:none!important}
   --mo-ease-in:cubic-bezier(.4,0,1,1);
   --mo-hi:color-mix(in srgb,var(--float) 30%,var(--paper));   /* "this just changed"; opaque on purpose */
   --mo-press:color-mix(in srgb,var(--ink) 9%,transparent);    /* pressed tint on light controls */
+  /* Blatant design (spec part 4 §3): one hue per building system, from the Japanese dictionary of traditional colours.
+     Each is always drawn with its monogram and word, never colour alone. Validated (dataviz six checks) on --paper in both themes. */
+  --sys-struct:#727171;  /* 鈍 nibi — structure: a neutral, outside the categorical chain */
+  --sys-elec:#B7282E;    /* 茜 akane — electrical distribution */
+  --sys-light:#BF783A;   /* 琥珀 kohaku — lighting & switches */
+  --sys-power:#AA4C8F;   /* 梅紫 umemurasaki — power & sockets */
+  --sys-water:#00A381;   /* 孔雀緑 kujakumidori — water supply */
+  --sys-drain:#1E50A2;   /* 瑠璃 ruri — drainage */
+  --sys-mech:#007B43;    /* 常磐 tokiwa — mechanical: AC, exhaust, lift */
+  --sys-fire:#D3381C;    /* 緋 hi — fire (Civil Defense) */
+  --sys-ext:#5654A2;     /* 桔梗 kikyō — exterior / facade */
+  --sys-tint:12%;        /* ground of a system tile: color-mix(in srgb, var(--sys-x) var(--sys-tint), var(--paper)) */
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
@@ -377,6 +389,16 @@ img{max-width:100%}[hidden]{display:none!important}
     --info:#7FAEDB; --info-bg:#172838;
     --scrim:rgba(0,0,0,.6);
     --on-ink-accent:#6B5500;
+    --sys-struct:#AFAFB0; /* 銀鼠 ginnezu */
+    --sys-elec:#D7003A;   /* 紅 kurenai */
+    --sys-light:#BF783A;  /* 琥珀 kohaku */
+    --sys-power:#B44C97;  /* 紅紫 benimurasaki */
+    --sys-water:#00A3AF;  /* 浅葱 asagi */
+    --sys-drain:#4C6CB3;  /* 群青 gunjō */
+    --sys-mech:#028760;   /* 常磐緑 tokiwamidori */
+    --sys-fire:#EB6101;   /* 朱 shu */
+    --sys-ext:#7058A3;    /* 竜胆 rindō */
+    --sys-tint:18%;
     color-scheme:dark;
   }
 }
@@ -392,6 +414,16 @@ img{max-width:100%}[hidden]{display:none!important}
   --info:#7FAEDB; --info-bg:#172838;
   --scrim:rgba(0,0,0,.6);
   --on-ink-accent:#6B5500;
+    --sys-struct:#AFAFB0; /* 銀鼠 ginnezu */
+    --sys-elec:#D7003A;   /* 紅 kurenai */
+    --sys-light:#BF783A;  /* 琥珀 kohaku */
+    --sys-power:#B44C97;  /* 紅紫 benimurasaki */
+    --sys-water:#00A3AF;  /* 浅葱 asagi */
+    --sys-drain:#4C6CB3;  /* 群青 gunjō */
+    --sys-mech:#028760;   /* 常磐緑 tokiwamidori */
+    --sys-fire:#EB6101;   /* 朱 shu */
+    --sys-ext:#7058A3;    /* 竜胆 rindō */
+    --sys-tint:18%;
   color-scheme:dark;
 }
 @media (min-width:1100px){ :root{ --gutter:24px; --gap:24px; } }
@@ -745,6 +777,81 @@ html[dir=rtl] .v-flags .fl-item.fl-stop .fl-fx{box-shadow:inset -2px 0 0 var(--s
 .v-flag .fl-acksec .lbl{margin-bottom:var(--s3)}
 .v-flag .fl-acksec .chips{margin-bottom:var(--s3)}
 .v-flag .fl-acksec .chip{min-height:44px}
+
+/* ---- 16-blatant.css ---- */
+/* 16-blatant — Blatant design (spec part 4 §2–§4): the shared vocabulary every part 4 screen draws with.
+ * burst .bx (label .bx-l over value .bx-v) · tile .tile (a column of 1–3 bursts under a .tl title row; a system tile carries its hue
+ * as a 2 px start-edge rule) · tiles row .tiles (2-up on a phone, a wrapped grid from 768 px) · system monogram .smono (an 18 px
+ * circle: --ink letter on the --sys-tint ground, 1 px hue border) · matrix .matrix (63 px sticky label column, 34 × 44 cells,
+ * 1 px gaps) · map .map / .map-g / .node (57-map.css) · position strip .pos (one 24 px line under the header bands).
+ * Part 1 names keep their meaning and are not touched here: .strip (the header bands), .mono (the T P E S O square), .more (⋯).
+ * Colours only through tokens; logical properties; the html[dir=rtl] rules sit beside what they mirror. */
+
+/* one hue per building system (00-tokens.css): the rules below read var(--sys), so a class names the system once */
+.sys-struct{--sys:var(--sys-struct)} .sys-elec{--sys:var(--sys-elec)} .sys-light{--sys:var(--sys-light)} .sys-power{--sys:var(--sys-power)} .sys-water{--sys:var(--sys-water)} .sys-drain{--sys:var(--sys-drain)} .sys-mech{--sys:var(--sys-mech)} .sys-fire{--sys:var(--sys-fire)} .sys-ext{--sys:var(--sys-ext)}
+
+/* burst (§4.1): a --t-11 label over a --t-14/600 value, at most two lines; "?" for an unknown wears --warn, never a 0 */
+.bx{display:inline-flex;flex-direction:column;gap:1px;min-width:0;max-width:100%;vertical-align:top;text-align:start}
+.bx-l{font-size:var(--t-11);font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bx-v{font-size:var(--t-14);font-weight:600;color:var(--ink);line-height:1.3;overflow-wrap:anywhere}
+.bx-v .unk,.bx-v.unk{color:var(--warn)}
+/* Arabic: the joined script takes no tracking and no capitals; one step larger so it reads */
+html[dir=rtl] .bx-l{font-size:var(--t-12);letter-spacing:0;text-transform:none}
+/* a row of bursts (a screen head, a tile's figures) */
+.bxs{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:flex-start;min-width:0}
+.bxs:empty{display:none}
+
+/* tile (§4.2): a bordered box, ≥ 44 px tall, a .tl title row (monogram · word) over its bursts; as a button or link the whole tile taps */
+.tile{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:44px;min-width:0;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper);color:var(--ink);font:inherit;text-align:start;text-decoration:none}
+.tile .tl{display:flex;align-items:center;gap:6px;min-height:22px;min-width:0;font-size:var(--t-14);font-weight:700}
+.tile .tl b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .bx{display:flex}
+.tile .bx-v{font-size:var(--t-13)}
+button.tile,a.tile{cursor:pointer}
+button.tile:hover,a.tile:hover{background:color-mix(in srgb,var(--sunk) 50%,var(--paper))}
+.tile.on{box-shadow:inset 0 0 0 1px var(--ink);border-color:var(--ink)} /* the chosen / current one */
+.tile.off{border-style:dashed;color:var(--ink-3)} /* not on this project, coming, view only */
+.tile.off .tl{color:var(--ink-2)}
+/* a system tile: the hue as a 2 px start-edge rule, always beside its .smono and word (§3 a) */
+.tile:is(.sys-struct,.sys-elec,.sys-light,.sys-power,.sys-water,.sys-drain,.sys-mech,.sys-fire,.sys-ext){border-inline-start:2px solid var(--sys)}
+/* tiles row: a 2-column grid on a phone (everything in view, no sideways scroll), a wrapped grid from 768 px; .one = a single column */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tiles.one{grid-template-columns:minmax(0,1fr)}
+@media (min-width:768px){.tiles:not(.one){grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
+
+/* system monogram (§2, §3 b): one Latin capital in an 18 px circle, --ink letter on the --sys-tint ground with a 1 px hue border; the word sits beside it */
+.smono{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--sys,var(--ink-2));background:color-mix(in srgb,var(--sys,var(--ink-2)) var(--sys-tint,12%),var(--paper));color:var(--ink);font-family:var(--font);font-size:11px;font-weight:700;line-height:1;letter-spacing:0;text-transform:none;vertical-align:-4px}
+
+/* matrix (§4.3): floors × systems. A 63 px label column that stays put, 34 × 44 cells with 1 px gaps (nine tracks carry eight
+   gaps: 63 + 8 × 34 + 8 = 343 px, exactly a 375 px phone's content box, no scroll; overflow-x:auto is only a safety below 360 px). A cell with sheets fills at --sys-tint
+   under a column headed by its .smono; an empty cell is – in --ink-3. Works for a <table> and for role="row" grids alike. */
+.matrix{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.matrix::-webkit-scrollbar{display:none}
+.matrix table{border-collapse:separate;border-spacing:1px;width:auto}
+.matrix th,.matrix td,.matrix .cell,.matrix .col{width:34px;min-width:34px;height:44px;min-height:44px;padding:0;text-align:center;vertical-align:middle;font-size:var(--t-13);font-weight:600;font-variant-numeric:tabular-nums}
+.matrix .cell{display:grid;place-items:center;background:var(--paper);color:var(--ink-3);min-width:0}
+.matrix .cell.on{background:color-mix(in srgb,var(--sys) var(--sys-tint,12%),var(--paper));box-shadow:inset 0 0 0 1px var(--sys);color:var(--ink)}
+.matrix .cell a,.matrix .cell button{display:grid;place-items:center;width:100%;height:100%;min-height:44px;color:inherit;text-decoration:none;font:inherit}
+.matrix th:first-child,.matrix td:first-child,.matrix .rh{position:sticky;inset-inline-start:0;z-index:1;width:63px;min-width:63px;max-width:63px;background:var(--bg);color:var(--ink);text-align:start;font-size:var(--t-13);font-weight:600;padding-inline-end:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:1px 0 0 var(--line-2)}
+html[dir=rtl] .matrix th:first-child,html[dir=rtl] .matrix td:first-child,html[dir=rtl] .matrix .rh{box-shadow:-1px 0 0 var(--line-2)}
+.matrix .col .smono{margin:0 auto}
+@media (min-width:768px){.matrix th:first-child,.matrix td:first-child,.matrix .rh{width:96px;min-width:96px;max-width:96px}}
+
+/* position strip (§4.5): the last band under the header, not sticky: one 24 px line of --t-12 --ink-2 crumbs joined by a bare ›
+   text node (bidi mirrors it in Arabic). Every crumb is a .lnk button (a span when a viewer may not follow it) with a 44 px hit
+   area (::after, inset-block 0 −20 px, inset-inline −4 px): all the slack sits below the line, because the sticky header above
+   (z-index 20, opaque) swallows any hit area pulled under it. One line: nowrap, overflow hidden, each crumb ellipsises and the
+   last one shrinks first. The box is 44 px with 20 px of padding below the line, pulled back by the same margin, so it takes
+   24 px of the page while its overflow clip still leaves the hit areas room (the view's padding-top absorbs the overlap, and the
+   relative crumbs paint above the view's content). */
+.pos{display:flex;align-items:center;gap:5px;height:44px;padding-block:0 20px;margin-block:0 -20px;margin-inline:calc(-1 * var(--gutter));padding-inline:var(--gutter);overflow:hidden;font-size:var(--t-12);color:var(--ink-2);white-space:nowrap;min-width:0;line-height:24px}
+.pos>button,.pos>span{position:relative;display:inline-flex;align-items:center;flex:0 1 auto;min-width:1.5em;height:24px;color:inherit;font:inherit;font-weight:600;font-size:var(--t-12);text-align:start;text-decoration:none}
+.pos>button.lnk{color:inherit}
+.pos>button::after{content:"";position:absolute;inset-block:0 -20px;inset-inline:-4px}
+.pos>[aria-current=page]{color:var(--ink);flex-shrink:9}
+.pos .pos-t{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pos .pos-t>bdi{display:inline;unicode-bidi:isolate}
+@media (min-width:768px){.pos{height:48px;line-height:28px}.pos>button,.pos>span{height:28px}}
 
 /* ---- 30-today.css ---- */
 /* 30-today.css — Today (.v-today), Week (.v-week), cell sheet (.cs-*), crew sheet. Owner: today. */
@@ -2193,6 +2300,96 @@ html[dir=rtl] .v-capital .v-cap-fronted{box-shadow:inset -3px 0 0 var(--warn)}
 @media (min-width:768px) and (max-width:1099px){
   .v-capital .v-cap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 }
+
+/* ---- 56-systems.css ---- */
+/* 56-systems — #systems (the building × systems matrix, nine tiles 2-up), #systems.<key> (sheets, jobs, what to buy),
+ * #systems.ext (the facade options, the materials board) and the Design screen's Systems tile (.ds-sys). Spec part 4 §2–§4, §6.
+ * The shared vocabulary (.bx .bxs .tile .tiles .smono .matrix, the --sys hues) is 16-blatant.css; only this screen's own
+ * layout lives here: the matrix grid, its label column and its row-end finding, the buy-list rows, the option tiles, the Design tile. */
+.v-systems{display:flex;flex-direction:column;gap:var(--gap,16px)}
+.v-systems h2{margin:0}
+.v-systems .hrow{flex-wrap:nowrap;min-width:0}
+.v-systems .hrow h2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sys-back{display:inline-flex;align-items:center;min-height:44px;font-weight:600;text-decoration:none;white-space:nowrap}
+/* a row of bursts under a section head; the "No option chosen" burst wears --warn (an unknown, never a 0) */
+.v-systems .sec>.bxs{padding-top:6px}
+.v-systems .bx-v .lnk{font-size:inherit}
+.v-systems .bx-v small{font-weight:500}
+.v-systems .bx.sys-empty .bx-v{color:var(--warn)}
+.v-systems .tile[aria-current=page]{border-color:var(--line-2)}
+/* the matrix (§4.3) as a grid: the 63 px sticky label column (the floor word over "n of 8"), 34 × 44 cells, 1 px gaps: nine
+   tracks carry eight gaps, 63 + 8 × 34 + 8 = 343 px, exactly the content box at 375 (the outer line is a shadow, so it takes no
+   width); the gap colour draws the grid lines, so the grid is only as wide as its tracks. The row-end finding "n of 8 drawn" (.rd)
+   is a column of its own from 768 px; on a phone it lives in the label. */
+.sys-matrix{display:grid;grid-template-columns:63px repeat(var(--cols,8),34px);gap:1px;width:fit-content;background:var(--line);box-shadow:0 0 0 1px var(--line)}
+.sys-matrix [role=row]{display:contents}
+.sys-matrix .rh{display:flex;flex-direction:column;justify-content:center;gap:1px;height:auto;min-height:44px;padding:2px 4px;white-space:normal}
+.sys-matrix .rh b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-stretch:80%} /* Archivo's wdth axis, as .num: "Basement" fits the 55 px of inner width */
+.sys-matrix .rh small{font-size:var(--t-11);font-weight:500;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sys-matrix .col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:auto;padding:2px;background:var(--bg);min-width:0}
+.sys-matrix .col small{display:none;font-size:var(--t-11);font-weight:500;color:var(--ink-2);text-align:center;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.sys-matrix .rd{display:none}
+@media (min-width:768px){
+  .sys-matrix{width:100%;grid-template-columns:96px repeat(var(--cols,8),minmax(34px,1fr)) minmax(96px,auto)}
+  .sys-matrix .col{width:auto;min-width:34px;padding:4px 2px}
+  .sys-matrix .col small{display:block}
+  .sys-matrix .cell{width:auto}
+  .sys-matrix .rh small{display:none}
+  .sys-matrix .rd{display:flex;align-items:center;min-height:44px;padding-inline:10px;background:var(--bg);font-size:var(--t-12);font-weight:600;color:var(--ink-2);white-space:nowrap}
+}
+/* the buy list: item · ~qty unit · trade · basis · confidence; an item row adds a third line (catalog · BOQ line · usual / market) */
+.sys-buy .sech .btn{min-height:34px}
+@media (max-width:1099px){.sys-buy .sech .btn{min-height:40px}}
+.sys-row>.m{white-space:normal;line-height:1.5}
+.sys-row>.w{align-self:start;font-weight:500;color:var(--ink-2);white-space:normal;max-width:40%}
+.sys-row3{grid-template-rows:auto auto auto}
+.sys-cmp{grid-column:1/-1;grid-row:3;padding-top:1px;line-height:1.5;overflow-wrap:anywhere}
+.sys-ar{font-weight:500}
+.sys-txt{font-size:var(--t-13);line-height:1.5;white-space:pre;overflow:auto;text-align:start}
+/* the facade options (§4.4): 2-up tiles, all seven in view; the chosen one wears the shared .tile.on ring and its word */
+.v-systems .tile.opt .tl{flex-wrap:wrap;row-gap:2px}
+.v-systems .tile.opt .chosen{font-size:var(--t-12);font-weight:700;color:var(--ink);white-space:nowrap}
+.sys-traits{min-height:16px}
+.sys-sheet .bx{display:flex;width:100%}
+.sys-sheet .tgs{padding-top:2px}
+/* the Design screen's Systems tile: one row of smono · word · sheet count per system, tap → #systems */
+.ds-sysrow{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--t-12);font-weight:600;color:var(--ink-2)}
+.ds-sysk{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ds-sysk.faint,.ds-sysk.faint .smono{color:var(--ink-3)}
+.ds-sysk .num{color:var(--ink)}
+.ds-sysk.faint .num{color:var(--ink-3)}
+
+/* ---- 57-map.css ---- */
+/* 57-map — #map: the feature map (spec part 4 §4.6). Five .map-g groups of .node tiles (16-blatant .tile) in a 2-column grid on a
+ * phone, a wider wrapped grid from 768 px; one node per screen, its burst, its "opens ›" lines, the route token and the word
+ * (● here / not on this project / view only / Coming · phase N). Everything is on the screen: no expander, no sideways scroll. */
+.v-map{display:flex;flex-direction:column;gap:var(--gap,16px)}
+.v-map h2{margin:0}
+.v-map .hrow{flex-wrap:nowrap;min-width:0}
+.map{display:flex;flex-direction:column;gap:var(--gap,16px)} /* also a .sec: the first, drawn, section of the screen */
+.map-g{display:flex;flex-direction:column;min-width:0}
+.map-g .sech .tot{color:var(--ink-2);font-weight:600}
+.map-nodes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-top:8px;align-items:stretch}
+@media (min-width:768px){.map-nodes{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
+/* a node: name · burst · opens lines · (route token · word) at the foot; --t-12 throughout on a phone */
+.node{gap:3px;min-height:80px;font-size:var(--t-12)}
+.node .tl{min-height:20px;font-size:var(--t-13)}
+.node .node-b{color:var(--ink-2);line-height:1.35;overflow-wrap:anywhere}
+.node .node-e.off{color:var(--ink-3)} /* a list entry not on this project (Top up float without a float): muted, never hidden */
+.node .node-o{display:block;line-height:1.35;color:var(--ink-2)}
+.node .node-o b{font-weight:600;color:var(--ink)}
+.node .node-o.off b{color:var(--ink-2)}
+.node .node-f{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:auto;padding-top:2px;min-width:0}
+.node .node-r{font-size:var(--t-11);color:var(--ink-3);font-variant-numeric:tabular-nums;font-stretch:80%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:isolate}
+.node .node-w{flex:none;font-size:var(--t-11);font-weight:700;color:var(--ink);white-space:nowrap}
+.node .node-w .pill{vertical-align:0}
+/* the current screen: an ink outline (like a chosen tile); a muted node keeps its name readable and its word quiet */
+.node.here{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.node.off .node-b,.node.off .node-o{color:var(--ink-3)}
+.node.off .node-w{color:var(--ink-3);font-weight:600}
+.node.off .node-o.here b,.node .node-o.here .node-w{color:var(--ink)}
+/* the Arabic word sits at the end of the foot row; the route token stays Latin and left-to-right inside it */
+html[dir=rtl] .node .node-r{direction:ltr;text-align:end}
 
 /* ---- 60-docs.css ---- */
 /* 60-docs.css — (+) Add sheet (.v-add) and manual cost forms (.v-dc). Owner: docs. */
@@ -4688,6 +4885,572 @@ window.SL = window.SL || {};
   };
 })(window.SL);
 
+/* ---- 14-systems-model.js ---- */
+/* SL.systems — the building's systems and the buy-list predictor (spec part 4 §6, §9). Pure over SL.S: no DOM, no SL.ui,
+ * no dates. Never a price or a budget: every row is an estimated quantity (est:true) for planning; the budget stays the
+ * engineer's BOQ (part 3 §0.6) and nothing here writes a doc.
+ *   drawings.systems{<key>:{floors{<floor>:{sheets, pages[], ceiling?}}, counts{<floor>:{<what>:{qty, low, high, confidence, how}}}}}
+ *       <floor> ∈ site basement ground first second roof; a "ground-ceiling" key is folded onto its floor (a ceiling sheet counts there: its sheets and its counts add to the floor's)
+ *       <what> is a key of COUNT_KEYS (the fixed vocabulary; a free key is read too but no rule stands on it)
+ *   drawings.options{o1…:{name, ar, pages, views, traits, traitsAr, materials{<mat>:share}, note}}   drawings.materials{<mat>:{name, ar, use, unit}}
+ *   projects.design.layout{source, drawingId, floors{<floor>:{units{<label>:{bedrooms, wcs, living, dining, kitchenette, other}}, common{<room>:n}}}, totals{…}, est:true}
+ *   projects.choices.facade{option, drawingId, at, by, note}   jobs.systems{<key>:true}   boq.sections.*.systems{<key>:true}
+ *   RULES    the one declarative table: {key, fix, item, ar, unit, per, qty, itemId?, trade, countKey?, share?, confidence?, note?}
+ *            per = the counting base derived from the layout, qty = how many per base; countKey = the drawing count (<what>) that
+ *            gives the row directly (Σ over the floors); a counted base (BASE_COUNTS) replaces the formula for every row standing
+ *            on it. Either way the row's basis.text says "counted on the drawing · G 24 · F 36 · S 12".
+ *   predict  = RULES × derived(layout): [] without a layout (an honest empty list). Pieces round up to whole numbers, lm up to the
+ *            next 5. A fact the layout cannot give (the facade area, the boundary) leaves qty null and basis.text "? <fact>", never 0.
+ *            itemId is kept only when catalog/items has the item: a hook for the usual / market comparison and the BOQ line, never a price.
+ *   basis    {rule, fact, value, text} (+ ruleAr, textAr for the Arabic viewer): English words and numbers; the screen wraps them.
+ *   A JSON null in a map means absent and a voided doc is not there: readers skip both (live). Memoised per pid on S().ver. */
+(function (SL) {
+  const U = SL.util, M = SL.model, S = () => SL.S, B = () => SL.boq;
+  const SY = (SL.systems = {});
+  let ver = -1, cache = {};
+  const memo = (k, fn) => { if (ver !== S().ver) { ver = S().ver; cache = {}; } if (!(k in cache)) cache[k] = fn(); return cache[k]; };
+  /** A map entry that is there: an object, not null, not voided. */
+  const live = (o) => !!o && typeof o === "object" && !o.void;
+  const isObj = (o) => !!o && typeof o === "object" && !Array.isArray(o);
+  const arr = (a) => (Array.isArray(a) ? a.filter((x) => x != null) : []);
+  const n = (v) => Math.max(0, U.num(v));
+  const asc = (a, b) => a - b;
+  const grp = (x) => String(Math.round(U.num(x))).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  SY.live = live;
+
+  /* ---------------- the fixed vocabularies (functions, so a language switch re-reads them; the screen writes U.L(x.name, x.ar)) ---------------- */
+  /** The nine systems in their fixed order: S · E · L · P · W · D · M · F · X (§3). */
+  SY.KEYS = ["struct", "elec", "light", "power", "water", "drain", "mech", "fire", "ext"];
+  /** The matrix columns: the eight with floor sheets (the facade deck has elevations and options, not floor sheets, §4.3). */
+  SY.MATRIX_KEYS = SY.KEYS.filter((k) => k !== "ext");
+  const SYS = [["struct", "S", "Structure & envelope", "الهيكل والغلاف", "Structure", "الهيكل"], ["elec", "E", "Electrical distribution", "توزيع الكهرباء", "Electrical", "الكهرباء"], ["light", "L", "Lighting & switches", "الإنارة والمفاتيح", "Lighting", "الإنارة"], ["power", "P", "Power & sockets", "القوى والفيش", "Power", "القوى"], ["water", "W", "Water supply", "تغذية المياه", "Water", "المياه"], ["drain", "D", "Drainage", "الصرف الصحي", "Drainage", "الصرف"], ["mech", "M", "Mechanical (AC, exhaust, lift)", "الميكانيكا (تكييف، شفط، مصعد)", "Mechanical", "الميكانيكا"], ["fire", "F", "Fire (Civil Defense)", "الحريق (الدفاع المدني)", "Fire", "الحريق"], ["ext", "X", "Exterior", "الواجهات", "Exterior", "الواجهات"]];
+  /** {key: {key, mono, name, ar, short, shortAr, order}}; the monogram stays a Latin letter in both languages, always beside its word: the short one on a two-line tile, the full name everywhere else (the screen heading, the matrix labels, the glossary). */
+  SY.SYSTEMS = () => { const o = {}; SYS.forEach(([key, mono, name, ar, short, shortAr], i) => (o[key] = { key, mono, name, ar, short, shortAr, order: i })); return o; };
+  /** Floors from the top down, the way the matrix draws them (§4.3). */
+  const FLR = [["roof", "Roof", "السطح", "R", "سطح"], ["second", "Second", "الثاني", "S", "ثاني"], ["first", "First", "الأول", "F", "أول"], ["ground", "Ground", "الأرضي", "G", "أرضي"], ["basement", "Basement", "القبو", "B", "قبو"], ["site", "Site", "الموقع", "Si", "موقع"]];
+  SY.FLOOR_ORDER = FLR.map((f) => f[0]);
+  const FLOOR_SET = new Set(SY.FLOOR_ORDER);
+  /** {key: {key, name, ar, short, shortAr, order (0 = the top)}}: short is the one-letter code of a counted basis ("G 24"), shortAr the bare Arabic word without the article ("أرضي 24", so a three-floor basis stays under the 80-character burst limit); a ceiling sheet reads "Ground · ceiling" on the screen. */
+  SY.FLOORS = () => { const o = {}; FLR.forEach(([key, name, ar, short, shortAr], i) => (o[key] = { key, name, ar, short, shortAr, order: i })); return o; };
+  /** "ground-ceiling" (a storage key) → {floor: "ground", ceiling: true}; a ceiling sheet counts on its floor. */
+  const foldFloor = (fk) => { const s = String(fk == null ? "" : fk).trim().toLowerCase(), m = s.match(/^(.*?)[-_ ]ceiling$/); return { floor: m ? m[1] : s, ceiling: !!m }; };
+  /** The buy-list fixes (docs/i18n.md: never "stage", that word is the Gantt group): first · second · final · external · plant. */
+  const FIX = [["first", "First", "التأسيس", "1st"], ["second", "Second", "التمديدات", "2nd"], ["final", "Final", "التشطيب", "final"], ["external", "External", "خارجي", "ext"], ["plant", "Plant", "المعدات الرئيسية", "plant"]];
+  SY.FIX_ORDER = FIX.map((f) => f[0]);
+  SY.FIXES = () => { const o = {}; FIX.forEach(([key, name, ar, short], i) => (o[key] = { key, name, ar, short, order: i })); return o; };
+  const TRD = [["electrician", "electrician", "كهربائي"], ["plumber", "plumber", "سباك"], ["ac", "AC technician", "فني تكييف"], ["mason", "mason", "بنّاء"], ["painter", "painter", "دهان"], ["stone-fitter", "stone fitter", "مركب حجر"], ["metalworker", "metalworker", "حداد"], ["fire-contractor", "fire contractor", "مقاول حريق"], ["lift-contractor", "lift contractor", "مقاول مصاعد"], ["landscaper", "landscaper", "منسق حدائق"]];
+  SY.TRADES = () => { const o = {}; TRD.forEach(([key, name, ar], i) => (o[key] = { key, name, ar, order: i })); return o; };
+  /** Confidence of a figure, strongest first; a merged figure takes the weakest of its parts. */
+  SY.CONF = ["counted", "estimated", "guessed"];
+  const CONF_WORDS = { counted: ["counted on the drawing", "معدود من المخطط"], estimated: ["estimated", "تقديري"], guessed: ["a guess", "تخمين"] };
+  SY.CONF_WORDS = () => { const o = {}; for (const [k, [name, ar]] of Object.entries(CONF_WORDS)) o[k] = { key: k, name, ar }; return o; };
+  const confOf = (c) => (SY.CONF.includes(c) ? c : "estimated");
+  const weakest = (a, b) => SY.CONF[Math.max(SY.CONF.indexOf(confOf(a)), SY.CONF.indexOf(confOf(b)))];
+  /** A rule's `per` → [the derived base, plural en, plural ar, singular en, singular ar, fact name en, fact name ar]: the words every basis is written with. */
+  const PER = {
+    unit: ["units", "units", "وحدات", "unit", "وحدة"], bedroom: ["bedrooms", "bedrooms", "غرف نوم", "bedroom", "غرفة نوم"], living: ["livings", "livings", "صالات", "living", "صالة"], dining: ["dinings", "dinings", "غرف طعام", "dining", "غرفة طعام"], kitchenette: ["kitchenettes", "kitchenettes", "مطابخ", "kitchenette", "مطبخ"], wc: ["wcs", "wcs", "دورات مياه", "wc", "دورة مياه"], wetRoom: ["wetRooms", "wet rooms", "غرف رطبة", "wet room", "غرفة رطبة"], room: ["room", "rooms", "غرف", "room", "غرفة"], floor: ["floors", "floors", "أدوار", "floor", "دور"], aboveFloor: ["aboveFloors", "floors above ground", "أدوار فوق الأرض", "floor above ground", "دور فوق الأرض"], building: ["building", "the building", "المبنى", "building", "المبنى"], roofOutlet: ["roofOutlet", "roof outlets", "صفايات سطح", "roof outlet", "صفاية سطح"], stack: ["stack", "stacks", "أعمدة صرف", "stack", "عمود صرف"], parkingBay: ["parkingBay", "parking bays", "مواقف", "parking bay", "موقف"], acPoint: ["acPoint", "AC points", "نقاط مكيف", "AC point", "نقطة مكيف"], lightPoint: ["lightPoint", "light points", "نقاط إنارة", "light point", "نقطة إنارة"], socketPoint: ["socketPoint", "socket points", "نقاط فيش", "socket point", "نقطة فيش"], lift: ["lift", "lifts", "مصاعد", "lift", "مصعد"], planter: ["planter", "planters", "أحواض زراعة", "planter", "حوض زراعة"], m2Facade: ["m2Facade", "m² facade", "م² واجهة", "m² facade", "م² واجهة", "facade area", "مساحة الواجهة"], lmBoundary: ["lmBoundary", "lm boundary", "م.ط سور", "lm boundary", "م.ط سور", "boundary wall", "السور"],
+  };
+  for (const p of Object.values(PER)) { if (!p[5]) { p[5] = p[1]; p[6] = p[2]; } }
+  SY.PER = Object.keys(PER);
+  /**
+   * The count-key vocabulary (fixed): RULES[].countKey and drawings.counts[<floor>][<what>] use exactly these. M has no sheet of its
+   * own: it reads ac-points and exhaust-fans wherever they were counted (power / light) plus the lifts of the layout; F reads nothing.
+   */
+  SY.COUNT_KEYS = {
+    struct: [],
+    elec: ["meters", "mdp", "boards", "feeder-lm"],
+    light: ["light-points", "switches", "pendants", "emergency-lights", "exhaust-fans"],
+    power: ["sockets", "basin-sockets", "ac-points", "heater-points", "cooker-points"],
+    water: ["heaters", "fixtures", "risers", "ppr-lm"],
+    drain: ["floor-drains", "stacks", "manholes", "cleanouts", "roof-outlets", "upvc-lm"],
+    mech: ["ac-points", "exhaust-fans"],
+    fire: [],
+    ext: ["facade-m2", "exterior-lights"],
+  };
+  const MECH_READS = SY.COUNT_KEYS.mech;
+  /** A derived base a drawing count (<what>) overrides: the count replaces the formula for every row on that base. */
+  SY.BASE_COUNTS = { lightPoint: "light-points", socketPoint: "sockets", acPoint: "ac-points", stack: "stacks", roofOutlet: "roof-outlets", m2Facade: "facade-m2" };
+  const UNIT_AR = { pc: "حبة", set: "طقم", lm: "م.ط", m2: "م²", m3: "م³" };
+  const unitAr = (u) => UNIT_AR[u] || u;
+  /** Pieces round up to whole numbers; lm up to the next 5 (nothing is bought by the half piece). */
+  SY.roundQty = (q, unit) => { q = U.num(q); if (!(q > 0)) return 0; return unit === "lm" ? Math.ceil(q / 5 - 1e-9) * 5 : Math.ceil(q - 1e-9); };
+
+  /* ---------------- the rules: Saudi residential practice, Riyadh; readable as a list by an engineer ----------------
+   * Final-fix ownership, once (§6): sanitary ware and mixers → W; light fittings and switch plates → L; socket plates → P; floor drains
+   * and traps → D; hoods, exhaust fans, AC units and lifts → M; detectors, extinguishers, exit lights → F; cladding, paint, pergola,
+   * planters, boundary wall, gates, exterior light fittings → X (their circuits → E). A P row counts the socket, an M row the unit.
+   * M, F and the low-current E rows stand on the layout alone (nothing drawn by Keel); M reads the ac-points / exhaust-fans counts. */
+  SY.RULES = [
+    // ---- E · Electrical distribution — electrician كهربائي (low current folded in: "Low current · not drawn")
+    { key: "elec", fix: "plant", item: "SEC meter", ar: "عداد كهرباء", unit: "pc", per: "unit", qty: 1, countKey: "meters", trade: "electrician", note: "one per unit; the common meters are the next row" },
+    { key: "elec", fix: "plant", item: "Common meters (lifts, lobbies, pump)", ar: "عدادات الخدمات المشتركة", unit: "pc", per: "building", qty: 2, trade: "electrician" },
+    { key: "elec", fix: "plant", item: "Meter cabinet (SEC)", ar: "لوحة عدادات", unit: "pc", per: "building", qty: 1, trade: "electrician" },
+    { key: "elec", fix: "plant", item: "Main distribution board (MDB)", ar: "لوحة توزيع رئيسية", unit: "pc", per: "building", qty: 1, trade: "electrician" },
+    { key: "elec", fix: "plant", item: "Distribution board 12-way per unit", ar: "لوحة توزيع فرعية 12 خط", unit: "pc", per: "unit", qty: 1, countKey: "boards", trade: "electrician" },
+    { key: "elec", fix: "plant", item: "Common-area distribution board", ar: "لوحة توزيع خدمات", unit: "pc", per: "floor", qty: 1, countKey: "mdp", trade: "electrician", note: "mdp = the floor main panels on the E sheets" },
+    { key: "elec", fix: "plant", item: "MCB breakers", ar: "قواطع كهرباء", unit: "pc", per: "unit", qty: 10, trade: "electrician" },
+    { key: "elec", fix: "first", item: "Feeder conduit 50 mm (meter bank → boards)", ar: "مواسير تغذية 50 مم", unit: "lm", per: "floor", qty: 25, countKey: "feeder-lm", trade: "electrician" },
+    { key: "elec", fix: "first", item: "Intercom conduit & cable (unit → entrance)", ar: "تمديد إنتركم", unit: "lm", per: "unit", qty: 25, trade: "electrician", note: "Low current · not drawn" },
+    { key: "elec", fix: "first", item: "TV / data conduit 20 mm", ar: "تمديد تلفزيون / شبكة", unit: "lm", per: "unit", qty: 40, trade: "electrician", note: "Low current · not drawn" },
+    { key: "elec", fix: "first", item: "CCTV conduit & cable", ar: "تمديد كاميرات", unit: "lm", per: "floor", qty: 30, trade: "electrician", note: "Low current · not drawn" },
+    { key: "elec", fix: "second", item: "Feeder cable 16 mm² (meter → unit board)", ar: "كيبل تغذية 16 مم²", unit: "lm", per: "unit", qty: 30, trade: "electrician" },
+    { key: "elec", fix: "second", item: "Exterior lighting circuit (conduit + cable)", ar: "دائرة الإنارة الخارجية", unit: "lm", per: "building", qty: 120, trade: "electrician", note: "the fittings are an X row" },
+    { key: "elec", fix: "final", item: "Earthing set (rod, pit, tape)", ar: "تأريض", unit: "set", per: "building", qty: 1, trade: "electrician" },
+    { key: "elec", fix: "final", item: "Intercom / door station", ar: "إنتركم", unit: "pc", per: "unit", qty: 1, trade: "electrician", note: "Low current · not drawn" },
+    { key: "elec", fix: "final", item: "TV / data outlet", ar: "مخرج تلفزيون / بيانات", unit: "pc", per: "unit", qty: 2, trade: "electrician", note: "Low current · not drawn" },
+    // ---- L · Lighting & switches
+    { key: "light", fix: "first", item: "PVC conduit 20 mm", ar: "مواسير كهرباء (سستة) 20 مم", unit: "lm", per: "unit", qty: 120, itemId: "itm_elec-sesta-15m", trade: "electrician", note: "the catalog item is a 15 m pack: 8 packs per unit" },
+    { key: "light", fix: "first", item: "Back boxes", ar: "علب كهرباء", unit: "pc", per: "unit", qty: 30, trade: "electrician" },
+    { key: "light", fix: "second", item: "Light point (conduit, box, wire)", ar: "نقطة إنارة", unit: "pc", per: "lightPoint", qty: 1, trade: "electrician", note: "lightPoint = bedrooms ×1 + livings ×2 + dinings ×1 + kitchenettes ×1 + wcs ×1 + other rooms ×1 + floors ×6 (lobbies, stairs); a counted light-points figure replaces it" },
+    { key: "light", fix: "second", item: "Switch position", ar: "مفتاح إنارة", unit: "pc", per: "lightPoint", qty: 0.8, countKey: "switches", trade: "electrician" },
+    { key: "light", fix: "second", item: "Cable 1.5 mm² (lighting)", ar: "كيبل 1.5 مم²", unit: "lm", per: "unit", qty: 120, trade: "electrician" },
+    { key: "light", fix: "final", item: "LED downlight / ceiling light", ar: "سبوت / إنارة سقف LED", unit: "pc", per: "lightPoint", qty: 1, trade: "electrician" },
+    { key: "light", fix: "final", item: "Switch plate", ar: "غطاء مفتاح", unit: "pc", per: "lightPoint", qty: 0.8, countKey: "switches", trade: "electrician" },
+    // ---- P · Power & sockets
+    { key: "power", fix: "second", item: "Socket point", ar: "نقطة فيش", unit: "pc", per: "socketPoint", qty: 1, trade: "electrician", note: "socketPoint = bedrooms ×4 + livings ×4 + dinings ×2 + kitchenettes ×5 + wcs ×1 + other rooms ×2 + floors ×2 (common); a counted sockets figure replaces it" },
+    { key: "power", fix: "second", item: "AC point (20 A)", ar: "نقطة مكيف", unit: "pc", per: "acPoint", qty: 1, trade: "electrician", note: "acPoint = bedrooms + livings + dinings + habitable common rooms; a counted ac-points figure replaces it" },
+    { key: "power", fix: "second", item: "Water-heater point", ar: "نقطة سخان", unit: "pc", per: "wc", qty: 1, countKey: "heater-points", trade: "electrician" },
+    { key: "power", fix: "second", item: "Cooker point", ar: "نقطة طباخ", unit: "pc", per: "kitchenette", qty: 1, countKey: "cooker-points", trade: "electrician" },
+    { key: "power", fix: "second", item: "Cable 2.5 mm² (sockets)", ar: "كيبل 2.5 مم²", unit: "lm", per: "unit", qty: 150, trade: "electrician" },
+    { key: "power", fix: "second", item: "Cable 6 mm² (AC, heaters, cooker)", ar: "كيبل 6 مم²", unit: "lm", per: "unit", qty: 40, trade: "electrician" },
+    { key: "power", fix: "final", item: "Socket 13 A", ar: "فيش 13 أمبير", unit: "pc", per: "socketPoint", qty: 1, trade: "electrician" },
+    { key: "power", fix: "final", item: "AC isolator switch 20 A", ar: "مفتاح عزل مكيف 20 أمبير", unit: "pc", per: "acPoint", qty: 1, trade: "electrician" },
+    { key: "power", fix: "final", item: "Heater double-pole switch", ar: "مفتاح سخان", unit: "pc", per: "wc", qty: 1, countKey: "heater-points", trade: "electrician" },
+    // ---- W · Water supply — plumber سباك
+    { key: "water", fix: "plant", item: "Elevated roof tank", ar: "خزان علوي", unit: "pc", per: "building", qty: 1, trade: "plumber", note: "size from the design (LC: one 6,000 L tank)" },
+    { key: "water", fix: "plant", item: "Ground tank", ar: "خزان أرضي", unit: "pc", per: "building", qty: 1, trade: "plumber" },
+    { key: "water", fix: "plant", item: "Pump set (transfer + booster)", ar: "مضخة مياه", unit: "set", per: "building", qty: 1, trade: "plumber" },
+    { key: "water", fix: "plant", item: "NWC water meter connection", ar: "عداد مياه", unit: "pc", per: "building", qty: 1, trade: "plumber" },
+    { key: "water", fix: "first", item: "PPR pipe 32 mm (risers)", ar: "مواسير PPR 32 مم", unit: "lm", per: "floor", qty: 20, trade: "plumber" },
+    { key: "water", fix: "first", item: "PPR pipe 25 mm (hot + cold)", ar: "مواسير PPR 25 مم", unit: "lm", per: "wetRoom", qty: 12, countKey: "ppr-lm", trade: "plumber" },
+    { key: "water", fix: "first", item: "PPR fittings", ar: "وصلات PPR", unit: "pc", per: "wetRoom", qty: 15, trade: "plumber" },
+    { key: "water", fix: "first", item: "Stop valve", ar: "محبس", unit: "pc", per: "wetRoom", qty: 2, trade: "plumber" },
+    { key: "water", fix: "second", item: "Water heater 50 L", ar: "سخان ماء 50 لتر", unit: "pc", per: "wc", qty: 1, countKey: "heaters", trade: "plumber" },
+    { key: "water", fix: "second", item: "Kitchen water heater 15 L", ar: "سخان مطبخ 15 لتر", unit: "pc", per: "kitchenette", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "Angle valve", ar: "محبس زاوية", unit: "pc", per: "wetRoom", qty: 4, trade: "plumber" },
+    { key: "water", fix: "final", item: "Basin mixer", ar: "خلاط مغسلة", unit: "pc", per: "wc", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "Shower mixer + set", ar: "خلاط دش", unit: "pc", per: "wc", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "Kitchen mixer", ar: "خلاط مطبخ", unit: "pc", per: "kitchenette", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "WC (western)", ar: "كرسي إفرنجي", unit: "pc", per: "wc", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "Basin", ar: "مغسلة", unit: "pc", per: "wc", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "Shattaf", ar: "شطاف", unit: "pc", per: "wc", qty: 1, trade: "plumber" },
+    { key: "water", fix: "final", item: "Kitchen sink", ar: "حوض مطبخ", unit: "pc", per: "kitchenette", qty: 1, trade: "plumber" },
+    // ---- D · Drainage
+    { key: "drain", fix: "first", item: "UPVC pipe 110 mm (soil)", ar: "مواسير UPVC 110 مم", unit: "lm", per: "wc", qty: 6, countKey: "upvc-lm", trade: "plumber" },
+    { key: "drain", fix: "first", item: "UPVC stack 110 mm", ar: "عمود صرف 110 مم", unit: "lm", per: "stack", qty: 14, trade: "plumber", note: "one stack per wc column (≈ the wcs on the ground floor); 14 lm ≈ 4 levels × 3.5 m; a counted stacks figure replaces the column count" },
+    { key: "drain", fix: "first", item: "UPVC pipe 50 mm (waste)", ar: "مواسير UPVC 50 مم", unit: "lm", per: "wetRoom", qty: 6, trade: "plumber" },
+    { key: "drain", fix: "first", item: "UPVC fittings", ar: "وصلات صرف", unit: "pc", per: "wetRoom", qty: 8, trade: "plumber" },
+    { key: "drain", fix: "first", item: "Ceiling collector run (ceiling drawings)", ar: "تمديد صرف بالسقف", unit: "lm", per: "aboveFloor", qty: 40, trade: "plumber" },
+    { key: "drain", fix: "first", item: "Basement collector 160 mm", ar: "ماسورة تجميع 160 مم", unit: "lm", per: "building", qty: 40, trade: "plumber" },
+    { key: "drain", fix: "first", item: "Vent elbow 110 mm", ar: "كوع ريحة 110", unit: "pc", per: "stack", qty: 1, itemId: "itm_vent-elbow-110-jesco", trade: "plumber" },
+    { key: "drain", fix: "final", item: "Floor drain", ar: "صفاية أرضية", unit: "pc", per: "wc", qty: 2, countKey: "floor-drains", itemId: "itm_floor-drain-chrome-20", trade: "plumber" },
+    { key: "drain", fix: "final", item: "Kitchen floor drain", ar: "صفاية مطبخ", unit: "pc", per: "kitchenette", qty: 1, itemId: "itm_floor-drain-chrome-20", trade: "plumber" },
+    { key: "drain", fix: "final", item: "Siphon / trap", ar: "سيفون", unit: "pc", per: "wc", qty: 1, itemId: "itm_siphon-full", trade: "plumber" },
+    { key: "drain", fix: "external", item: "Inspection chamber", ar: "غرفة تفتيش", unit: "pc", per: "building", qty: 4, countKey: "manholes", trade: "mason" },
+    { key: "drain", fix: "external", item: "Parking gully", ar: "بالوعة مواقف", unit: "pc", per: "parkingBay", qty: 0.5, trade: "mason" },
+    { key: "drain", fix: "external", item: "Sewer connection", ar: "توصيلة صرف صحي", unit: "pc", per: "building", qty: 1, trade: "plumber" },
+    { key: "drain", fix: "external", item: "Roof outlet", ar: "صفاية سطح", unit: "pc", per: "roofOutlet", qty: 1, trade: "plumber", note: "roofOutlet = footprint ÷ 75 m², at least 2; a counted roof-outlets figure replaces it" },
+    { key: "drain", fix: "external", item: "Rainwater downpipe UPVC 75 mm", ar: "ماسورة مطر 75 مم", unit: "lm", per: "roofOutlet", qty: 15, trade: "plumber" },
+    { key: "drain", fix: "external", item: "Basement sump pump", ar: "مضخة غاطسة للقبو", unit: "pc", per: "building", qty: 1, trade: "plumber", note: "two sump points drawn on the basement sheet" },
+    // ---- M · Mechanical: AC, exhaust, lift — AC technician فني تكييف; the lift is a bought package (S only gives the shaft)
+    { key: "mech", fix: "plant", item: "Split AC unit", ar: "مكيف سبليت", unit: "pc", per: "acPoint", qty: 1, trade: "ac", note: "the P row counts the point, this row the unit; the ac-points count on the P sheets replaces the formula" },
+    { key: "mech", fix: "plant", item: "Passenger lift (package, incl. inspection)", ar: "مصعد ركاب", unit: "pc", per: "lift", qty: 1, trade: "lift-contractor", note: "lift = layout common.lift (LC: 2 per p2.design); S only gives the shaft" },
+    { key: "mech", fix: "first", item: "AC drain pipe", ar: "ماسورة تصريف مكيف", unit: "lm", per: "acPoint", qty: 8, trade: "ac" },
+    { key: "mech", fix: "first", item: "Copper pipe set (insulated)", ar: "طقم نحاس معزول", unit: "set", per: "acPoint", qty: 1, trade: "ac" },
+    { key: "mech", fix: "final", item: "AC bracket", ar: "حامل مكيف", unit: "pc", per: "acPoint", qty: 1, trade: "ac" },
+    { key: "mech", fix: "final", item: "Exhaust fan", ar: "شفاط", unit: "pc", per: "wetRoom", qty: 1, countKey: "exhaust-fans", trade: "electrician", note: "fans are drawn on the lighting sheets: the exhaust-fans count replaces the wet-room rule" },
+    { key: "mech", fix: "final", item: "Kitchen hood", ar: "شفاط مطبخ", unit: "pc", per: "kitchenette", qty: 1, trade: "ac" },
+    // ---- F · Fire (Civil Defense) — fire contractor مقاول حريق; nothing drawn by Keel: all from the layout; the certificate gates the meter
+    { key: "fire", fix: "plant", item: "Fire alarm control panel", ar: "لوحة إنذار حريق", unit: "pc", per: "building", qty: 1, trade: "fire-contractor" },
+    { key: "fire", fix: "first", item: "Alarm conduit + cable", ar: "تمديدات إنذار", unit: "lm", per: "unit", qty: 30, trade: "fire-contractor" },
+    { key: "fire", fix: "final", item: "Smoke / heat detector", ar: "كاشف دخان / حرارة", unit: "pc", per: "room", qty: 1, trade: "fire-contractor", note: "room = bedrooms + livings + dinings + kitchenettes + lobbies" },
+    { key: "fire", fix: "final", item: "Manual call point + sounder", ar: "نقطة إنذار يدوية + صفارة", unit: "pc", per: "floor", qty: 1, trade: "fire-contractor" },
+    { key: "fire", fix: "final", item: "Fire extinguisher 6 kg", ar: "طفاية حريق 6 كجم", unit: "pc", per: "floor", qty: 2, trade: "fire-contractor" },
+    { key: "fire", fix: "final", item: "Emergency / exit light", ar: "إنارة طوارئ / مخرج", unit: "pc", per: "floor", qty: 4, trade: "fire-contractor" },
+    { key: "fire", fix: "final", item: "Hose-reel cabinet", ar: "خزانة خرطوم حريق", unit: "pc", per: "floor", qty: 1, confidence: "guessed", trade: "fire-contractor", note: "guessed: only if Civil Defense requires it for this size" },
+    // ---- X · Exterior / facade — stone fitter مركب حجر, painter دهان, metalworker حداد.
+    // share rows: m2Facade × the chosen option's share of that material (drawings.options[o].materials); the others are common to every option.
+    { key: "ext", fix: "external", item: "Riyadh stone cladding", ar: "حجر رياض", unit: "m2", per: "m2Facade", share: "riyadh-stone", trade: "stone-fitter" },
+    { key: "ext", fix: "external", item: "Travertine cladding", ar: "ترافرتين", unit: "m2", per: "m2Facade", share: "travertine", trade: "stone-fitter" },
+    { key: "ext", fix: "external", item: "Grooved stone", ar: "حجر مخدد", unit: "m2", per: "m2Facade", share: "grooved-stone", trade: "stone-fitter" },
+    { key: "ext", fix: "external", item: "Textured exterior paint (2 coats + primer)", ar: "دهان خارجي خشن", unit: "m2", per: "m2Facade", share: "paint-textured", itemId: "itm_paint-p497-30kg", trade: "painter", note: "the catalog item is a 30 kg drum ≈ 60 m² at 2 coats" },
+    { key: "ext", fix: "external", item: "Vertical louvers", ar: "شرائح (لوفر) رأسية", unit: "m2", per: "m2Facade", share: "louvers", trade: "metalworker" },
+    { key: "ext", fix: "external", item: "Metal cladding & trims", ar: "كسوة معدنية", unit: "m2", per: "m2Facade", share: "metal", trade: "metalworker" },
+    { key: "ext", fix: "external", item: "Glazing (facade glass)", ar: "زجاج واجهة", unit: "m2", per: "m2Facade", share: "glass", trade: "metalworker" },
+    { key: "ext", fix: "external", item: "Exterior wall / soffit light fitting", ar: "كشاف خارجي", unit: "pc", per: "building", qty: 12, countKey: "exterior-lights", trade: "electrician", note: "the renders show lit bases and soffits; count on the chosen option; its circuit is an E row" },
+    { key: "ext", fix: "external", item: "Metal roof fascia & trims", ar: "كسوة معدنية للسطح", unit: "lm", per: "building", qty: 80, trade: "metalworker" },
+    { key: "ext", fix: "external", item: "Roof pergola (timber-look aluminium)", ar: "برجولا سطح", unit: "m2", per: "building", qty: 120, trade: "metalworker" },
+    { key: "ext", fix: "external", item: "Planters (precast)", ar: "أحواض زراعة", unit: "pc", per: "planter", qty: 1, trade: "mason", note: "planter = 8 per building unless the layout says" },
+    { key: "ext", fix: "external", item: "Drip irrigation line", ar: "خط ري بالتنقيط", unit: "lm", per: "planter", qty: 6, trade: "landscaper" },
+    { key: "ext", fix: "external", item: "Boundary wall render + paint", ar: "لياسة ودهان سور", unit: "lm", per: "lmBoundary", qty: 1, trade: "painter", note: "lmBoundary = layout.totals.boundaryM, else projects.design.fencesM (LC 23.5); unknown → ?" },
+    { key: "ext", fix: "external", item: "Gates (car + pedestrian)", ar: "بوابات", unit: "pc", per: "building", qty: 2, trade: "metalworker" },
+    { key: "ext", fix: "external", item: "Villa number sign", ar: "لوحة رقم الفيلا", unit: "pc", per: "building", qty: 1, trade: "metalworker" },
+  ];
+
+  /* ---------------- the decks: drawings docs that carry systems, options or a materials board ---------------- */
+  const deckDate = (d) => (U.isISO(d.date) ? d.date : U.maxDate(...Object.values(isObj(d.dates) ? d.dates : {}).filter(U.isISO)));
+  const assetOf = (d) => { const f = arr(d.files)[0]; return typeof f === "string" ? f : (f && f.id) || ""; };
+  /** The project's decks, newest first (a superseded set is left out; void docs and other projects never count; ties by id). */
+  SY.decks = (pid) => memo("decks:" + pid, () => U.sortBy(Object.values(S().drawings || {}).filter((d) => live(d) && M.pidOf(d) === pid && d.status !== "superseded" && (isObj(d.systems) || isObj(d.options) || isObj(d.materials))), (d) => deckDate(d) + ":" + String(d.createdAt || 0).padStart(15, "0") + ":" + d.id, "desc"));
+  const deckRank = (pid) => memo("rank:" + pid, () => { const r = {}; SY.decks(pid).forEach((d, i) => (r[d.id] = i)); return r; });
+
+  /* ---------------- the layout ---------------- */
+  /** The building's rooms as the latest layouts draw them (projects.design.layout), or null. */
+  SY.layout = (pid) => { const p = M.project(pid), des = p && isObj(p.design) ? p.design : null, l = des && isObj(des.layout) ? des.layout : null; return l && (isObj(l.floors) || isObj(l.totals)) ? l : null; };
+  const layoutFloors = (lay) => { const out = new Set(); for (const [fk, f] of Object.entries(lay && isObj(lay.floors) ? lay.floors : {})) if (live(f)) { const b = foldFloor(fk).floor; if (FLOOR_SET.has(b)) out.add(b); } return out; };
+
+  /* ---------------- the building × systems matrix (§4.3) ---------------- */
+  /**
+   * {floors: [floor keys, top down], keys: MATRIX_KEYS, cells: {"<floor>_<key>": {floor, key, sheets, ceiling, pages, drawingId, assetId, decks}},
+   *  drawn: {<floor>: n of 8}, n, decks: [drawing ids]}. Rows are the layout's floors ∪ any floor a deck draws (site only when a column
+   * deck draws it); without a layout the fixed five plus site. A ceiling sheet counts on its floor (ceiling = how many of the sheets are
+   * ceilings; decks[].ceiling marks them); pages and drawingId are the newest deck's, sheets add up. Exterior cells are computed for
+   * the X screen but X is not a column.
+   */
+  SY.matrix = (pid) => memo("matrix:" + pid, () => {
+    const cells = {}, used = [], lay = SY.layout(pid), layF = layoutFloors(lay);
+    for (const d of SY.decks(pid)) {
+      const sys = isObj(d.systems) ? d.systems : {};
+      let hit = false;
+      for (const key of SY.KEYS) {
+        const s = sys[key]; if (!live(s)) continue;
+        for (const [fk, f] of Object.entries(isObj(s.floors) ? s.floors : {})) {
+          if (!live(f)) continue;
+          const ff = foldFloor(fk), floor = ff.floor, ceiling = ff.ceiling || f.ceiling === true; if (!FLOOR_SET.has(floor)) continue;
+          const pages = U.uniq(arr(f.pages).map(U.num).filter((x) => x > 0)).sort(asc);
+          const sheets = f.sheets != null && f.sheets !== "" ? Math.max(0, Math.round(U.num(f.sheets))) : pages.length || 1;
+          const id = floor + "_" + key, c = cells[id] || (cells[id] = { floor, key, sheets: 0, ceiling: 0, pages: [], drawingId: "", assetId: "", decks: [] });
+          if (!c.drawingId) { c.drawingId = d.id; c.assetId = assetOf(d); }
+          if (c.drawingId === d.id) c.pages = U.uniq(c.pages.concat(pages)).sort(asc);
+          c.sheets += sheets; if (ceiling) c.ceiling += sheets;
+          c.decks.push({ drawingId: d.id, assetId: assetOf(d), sheets, pages, ceiling }); hit = true;
+        }
+      }
+      if (hit) used.push(d.id);
+    }
+    const inGrid = Object.values(cells).filter((c) => SY.MATRIX_KEYS.includes(c.key)), deckF = new Set(inGrid.map((c) => c.floor));
+    const floors = lay ? SY.FLOOR_ORDER.filter((f) => layF.has(f) || deckF.has(f)) : SY.FLOOR_ORDER.slice();
+    const drawn = {}; for (const f of floors) drawn[f] = SY.MATRIX_KEYS.filter((k) => cells[f + "_" + k]).length;
+    return { floors, keys: SY.MATRIX_KEYS.slice(), cells, drawn, n: inGrid.length, decks: used };
+  });
+  /** The sheets a system has on a project: {sheets, ceiling, floors: [floor keys, top down], decks: [{drawingId, assetId, sheets, pages}]}. */
+  SY.sheets = (pid, key) => {
+    const m = SY.matrix(pid), out = { sheets: 0, ceiling: 0, floors: [], decks: [] };
+    for (const f of SY.FLOOR_ORDER) {
+      const c = m.cells[f + "_" + key]; if (!c) continue;
+      out.sheets += c.sheets; out.ceiling += c.ceiling; out.floors.push(f);
+      for (const d of c.decks) { const x = out.decks.find((y) => y.drawingId === d.drawingId); if (x) { x.sheets += d.sheets; x.pages = U.uniq(x.pages.concat(d.pages)).sort(asc); } else out.decks.push({ drawingId: d.drawingId, assetId: d.assetId, sheets: d.sheets, pages: d.pages.slice() }); }
+    }
+    return out;
+  };
+
+  /* ---------------- drawing counts: what Claude counted on the sheets ---------------- */
+  /** A system's own counts per floor, merged across decks (the newest deck wins per floor and <what>; within one deck a "<floor>-ceiling" key's figures add to the floor's, as its sheets do in the matrix). Read from systems.<key>.counts (§9); a doc-level counts.<key> map is accepted too. */
+  const rawCounts = (pid, key) => memo("rawc:" + pid + ":" + key, () => {
+    const out = {};
+    for (const d of SY.decks(pid)) {
+      const s = isObj(d.systems) && live(d.systems[key]) ? d.systems[key] : null;
+      const src = s && isObj(s.counts) ? s.counts : isObj(d.counts) && live(d.counts[key]) ? d.counts[key] : null; if (!src) continue;
+      for (const [fk, m] of Object.entries(src)) {
+        const floor = foldFloor(fk).floor; if (!live(m) || !FLOOR_SET.has(floor)) continue;
+        for (const [what, c] of Object.entries(m)) {
+          if (!live(c)) continue;
+          const f = out[floor] || (out[floor] = {}), e = f[what];
+          const low = n(c.low), high = n(c.high), qty = c.qty != null && c.qty !== "" ? n(c.qty) : low || high ? (low + high) / 2 : 0;
+          if (e) {
+            if (e.drawingId !== d.id) continue;   // the newer deck already spoke
+            e.qty += qty; e.low += low; e.high += high; e.confidence = weakest(e.confidence, confOf(c.confidence)); continue;   // the same deck's ceiling sheet: folded onto its floor, the figures add up
+          }
+          f[what] = { qty, low, high, confidence: confOf(c.confidence), how: String(c.how || ""), drawingId: d.id, key };
+        }
+      }
+    }
+    return out;
+  });
+  /** Every count of the project by <what>, across systems: {<what>: {what, qty, n, floors: {<floor>: {qty, confidence, drawingId, key}}, confidence (the weakest), drawingIds, keys}}. */
+  SY.allCounts = (pid) => memo("allc:" + pid, () => {
+    const out = {}, rank = deckRank(pid);
+    for (const key of SY.KEYS) for (const [floor, m] of Object.entries(rawCounts(pid, key))) for (const [what, c] of Object.entries(m)) {
+      const w = out[what] || (out[what] = { what, qty: 0, n: 0, floors: {}, confidence: "counted", drawingIds: [], keys: [] });
+      const prev = w.floors[floor]; if (prev && rank[prev.drawingId] <= rank[c.drawingId]) continue;
+      w.floors[floor] = Object.assign({}, c);
+    }
+    for (const w of Object.values(out)) {
+      for (const f of Object.values(w.floors)) { w.qty += f.qty; w.confidence = weakest(w.confidence, f.confidence); if (!w.drawingIds.includes(f.drawingId)) w.drawingIds.push(f.drawingId); if (!w.keys.includes(f.key)) w.keys.push(f.key); }
+      w.n = Object.keys(w.floors).length;
+    }
+    return out;
+  });
+  /**
+   * A system's counts per floor: {<floor>: {<what>: {qty, low, high, confidence, how, drawingId, key}}}, every deck's systems.<key>.counts
+   * merged (the newest deck wins per floor and <what>). For mech the ac-points / exhaust-fans keys are folded in from wherever they
+   * were counted (the power / light sheets): M has no sheet of its own.
+   */
+  SY.counts = (pid, key) => memo("counts:" + pid + ":" + key, () => {
+    const own = rawCounts(pid, key); if (key !== "mech") return own;
+    const out = {}; for (const [f, m] of Object.entries(own)) out[f] = Object.assign({}, m);
+    const all = SY.allCounts(pid);
+    for (const what of MECH_READS) { const w = all[what]; if (!w) continue; for (const [floor, c] of Object.entries(w.floors)) { const f = out[floor] || (out[floor] = {}); if (!f[what]) f[what] = Object.assign({}, c); } }
+    return out;
+  });
+  /** One <what> counted on the drawings (Σ over the floors, wherever it was counted), or null when nothing was counted. */
+  SY.countOf = (pid, what) => (what && SY.allCounts(pid)[what]) || null;
+  /** "counted on the drawing · G 24 · F 36 · S 12" (floors from the bottom up) in both languages: [en, ar]. */
+  const countedText = (w) => {
+    const F = SY.FLOORS(), fl = SY.FLOOR_ORDER.slice().reverse().filter((f) => w.floors[f]);
+    return [CONF_WORDS.counted[0] + " · " + fl.map((f) => F[f].short + " " + grp(w.floors[f].qty)).join(" · "), CONF_WORDS.counted[1] + " · " + fl.map((f) => F[f].shortAr + " " + grp(w.floors[f].qty)).join(" · ")];
+  };
+
+  /* ---------------- the counting bases ---------------- */
+  /** What a common room is for the counts: wc · laundry · kitchenette · parking · lift · lobby · planter · service (lit, no AC) · none (stairs, tanks) · room (habitable). */
+  const roomKind = (room) => {
+    const k = String(room).toLowerCase().replace(/[^a-z]/g, "").replace(/(bed)?rooms?$/, "");
+    if (/^(wcs?|toilets?|bathrooms?|bath|guestwc|powder)$/.test(k)) return "wc";
+    if (/^(laundry|laundries)$/.test(k)) return "laundry";
+    if (/^(kitchenettes?|kitchens?)$/.test(k)) return "kitchenette";
+    if (/^(parking|parkingbays?|bays?|cars?|carports?|garage)$/.test(k)) return "parking";
+    if (/^(lifts?|elevators?)$/.test(k)) return "lift";
+    if (/^(lobby|lobbies|corridors?|halls?|entrances?)$/.test(k)) return "lobby";
+    if (/^(planters?|planterbox(es)?|plantbox(es)?)$/.test(k)) return "planter";
+    if (/^(stairs?|staircases?|tanks?|shafts?|meters?|liftheads?|outdoor|outdoorarea|terraces?|balcon(y|ies)|gardens?|yards?|roofs?|setbacks?)$/.test(k)) return "none";
+    if (/^(garbage|trash|bins?|stores?|storage|pump|generators?|electrical|mechanical|plant|services?)$/.test(k)) return "service";
+    return "room";
+  };
+  const field = (o, a, b) => n(o[a] != null ? o[a] : o[b]);
+  /** Floors above ground (ground, first, second) when there is no layout: the design's floor list, else the drawings' facts.floors, else 0. */
+  const aboveFloorsFallback = (pid, design) => {
+    if (Array.isArray(design.floors)) { const k = design.floors.filter((f) => f && !/basement|roof|قبو|سطح/i.test(String(f.name || f.key || ""))).length; if (k > 0) return k; }
+    let best = 0; for (const d of Object.values(S().drawings || {})) if (live(d) && M.pidOf(d) === pid && isObj(d.facts)) best = Math.max(best, Math.round(n(d.facts.floors)));
+    return best;
+  };
+  /**
+   * The counting bases of a layout: {units, bedrooms, livings, dinings, kitchenettes, wcs, laundries, lobbies, rooms, otherRooms, wetRooms,
+   * room, floors, aboveFloors, lift, planter, lightPoint, socketPoint, acPoint, stack, roofOutlet, parkingBay, m2Facade, lmBoundary,
+   * building, confidence{base}, basis{base}, basisAr{base}, source, drawingId, est:true}. A fact the layout cannot give is null (never 0).
+   *   wetRooms    = wcs + kitchenettes + laundries
+   *   room        = bedrooms + livings + dinings + kitchenettes + lobbies (one detector each)
+   *   lightPoint  = bedrooms ×1 + livings ×2 + dinings ×1 + kitchenettes ×1 + wcs ×1 + other rooms ×1 + floors ×6 (lobbies, stairs)
+   *   socketPoint = bedrooms ×4 + livings ×4 + dinings ×2 + kitchenettes ×5 + wcs ×1 + other rooms ×2 + floors ×2 (common)
+   *   acPoint     = bedrooms + livings + dinings + habitable common rooms (a laundry or a garbage room gets none)
+   *   lift        = the layout's common.lift (the most on any floor: a lift spans floors, never a sum), else projects.design.lifts, else 0
+   *   planter     = layout.totals.planters, else the planters the layouts draw, else 8 per building (a guess)
+   *   stack       = the wcs on the ground floor (one soil stack per wc column), else the most wcs on any floor
+   *   roofOutlet  = footprint ÷ 75 m², at least 2 (4, guessed, when the footprint is unknown)
+   *   parkingBay  = the parking bays the layouts draw
+   *   m2Facade    = layout.totals.facadeM2, else the facade-m2 count, else 4·√footprint × 3.5 m × floors above ground (guessed), else null
+   *   lmBoundary  = layout.totals.boundaryM, else projects.design.fencesM, else null
+   * With a pid the drawing counts of BASE_COUNTS override the formulas (the basis then says "counted on the drawing · G 24 · F 36").
+   */
+  SY.derived = (layout, pid) => {
+    const d = { units: 0, bedrooms: 0, livings: 0, dinings: 0, kitchenettes: 0, wcs: 0, laundries: 0, lobbies: 0, rooms: 0, otherRooms: 0, wetRooms: 0, room: 0, floors: 0, aboveFloors: 0, lift: 0, planter: 0, lightPoint: 0, socketPoint: 0, acPoint: 0, stack: 0, roofOutlet: 0, parkingBay: 0, m2Facade: null, lmBoundary: null, building: layout ? 1 : 0, confidence: {}, basis: {}, basisAr: {}, source: "", drawingId: "", est: true };
+    const p = pid ? M.project(pid) : null, design = p && isObj(p.design) ? p.design : {};
+    const t = layout && isObj(layout.totals) ? layout.totals : {}, floors = layout && isObj(layout.floors) ? layout.floors : {};
+    const bs = (k, en, ar, conf) => { d.basis[k] = en; d.basisAr[k] = ar; d.confidence[k] = conf || "estimated"; };
+    if (layout) { d.source = String(layout.source || ""); d.drawingId = String(layout.drawingId || ""); }
+    let any = false, groundWcs = 0, maxWcs = 0, maxLifts = 0, service = 0, planters = 0;
+    for (const [fk, f] of Object.entries(floors)) {
+      if (!live(f)) continue;
+      const floor = foldFloor(fk).floor;
+      any = true;
+      let wcs = 0, lifts = 0;
+      for (const u of Object.values(isObj(f.units) ? f.units : {})) {
+        if (!live(u)) continue;
+        d.units++; d.bedrooms += field(u, "bedrooms", "bedroom"); d.livings += field(u, "living", "livings"); d.dinings += field(u, "dining", "dinings"); d.kitchenettes += field(u, "kitchenette", "kitchenettes");
+        wcs += field(u, "wcs", "wc"); d.rooms += field(u, "other", "others");
+      }
+      for (const [room, cnt] of Object.entries(isObj(f.common) ? f.common : {})) {
+        const c = n(cnt); if (!(c > 0)) continue;
+        const kind = roomKind(room);
+        if (kind === "wc") wcs += c; else if (kind === "laundry") d.laundries += c; else if (kind === "kitchenette") d.kitchenettes += c; else if (kind === "parking") d.parkingBay += c; else if (kind === "lift") lifts += c; else if (kind === "lobby") d.lobbies += c; else if (kind === "planter") planters += c; else if (kind === "room") d.rooms += c; else if (kind === "service") service += c;
+      }
+      d.wcs += wcs; maxWcs = Math.max(maxWcs, wcs); maxLifts = Math.max(maxLifts, lifts); if (floor === "ground") groundWcs = wcs;
+      if (floor !== "site") d.floors++;
+      if (floor === "ground" || floor === "first" || floor === "second") d.aboveFloors++;
+    }
+    if (!any && layout) {   // a layout with totals only: taken as they are
+      d.units = n(t.units); d.bedrooms = n(t.bedrooms); d.wcs = n(t.wcs); d.kitchenettes = n(t.kitchenettes); d.livings = n(t.livings) || d.units; d.dinings = n(t.dinings); d.laundries = n(t.laundries); d.lobbies = n(t.lobbies); d.floors = n(t.floors); d.aboveFloors = n(t.aboveFloors) || Math.min(3, d.floors); d.parkingBay = n(t.parkingBays); groundWcs = maxWcs = n(t.stacks); maxLifts = n(t.lifts); planters = n(t.planters);
+    }
+    d.otherRooms = d.rooms + d.laundries + service;   // every room gets light and sockets
+    const src = d.source ? " (" + d.source + ")" : "", fromLayout = ["from the layouts" + src, "من التوزيعات" + src];
+    for (const k of ["units", "bedrooms", "livings", "dinings", "kitchenettes", "wcs", "lobbies", "floors", "aboveFloors", "parkingBay"]) bs(k, fromLayout[0], fromLayout[1]);
+    d.wetRooms = d.wcs + d.kitchenettes + d.laundries;
+    bs("wetRooms", `${d.wcs} wcs + ${d.kitchenettes} kitchenettes + ${d.laundries} laundries = ${d.wetRooms}`, `${d.wcs} دورات مياه + ${d.kitchenettes} مطابخ + ${d.laundries} مغاسل = ${d.wetRooms}`);
+    d.room = d.bedrooms + d.livings + d.dinings + d.kitchenettes + d.lobbies;
+    bs("room", `${d.bedrooms} bedrooms + ${d.livings} livings + ${d.dinings} dinings + ${d.kitchenettes} kitchenettes + ${d.lobbies} lobbies = ${d.room}`, `${d.bedrooms} غرف نوم + ${d.livings} صالات + ${d.dinings} غرف طعام + ${d.kitchenettes} مطابخ + ${d.lobbies} ردهات = ${d.room}`);
+    d.lightPoint = d.bedrooms + 2 * d.livings + d.dinings + d.kitchenettes + d.wcs + d.otherRooms + 6 * d.floors;
+    bs("lightPoint", `${d.bedrooms} bedrooms ×1 + ${d.livings} livings ×2 + ${d.dinings} dinings ×1 + ${d.kitchenettes} kitchenettes ×1 + ${d.wcs} wcs ×1 + ${d.otherRooms} rooms ×1 + ${d.floors} floors ×6 = ${d.lightPoint}`, `${d.bedrooms} غرف نوم ×1 + ${d.livings} صالات ×2 + ${d.dinings} غرف طعام ×1 + ${d.kitchenettes} مطابخ ×1 + ${d.wcs} دورات مياه ×1 + ${d.otherRooms} غرف ×1 + ${d.floors} أدوار ×6 = ${d.lightPoint}`);
+    d.socketPoint = 4 * d.bedrooms + 4 * d.livings + 2 * d.dinings + 5 * d.kitchenettes + d.wcs + 2 * d.otherRooms + 2 * d.floors;
+    bs("socketPoint", `${d.bedrooms} bedrooms ×4 + ${d.livings} livings ×4 + ${d.dinings} dinings ×2 + ${d.kitchenettes} kitchenettes ×5 + ${d.wcs} wcs ×1 + ${d.otherRooms} rooms ×2 + ${d.floors} floors ×2 = ${d.socketPoint}`, `${d.bedrooms} غرف نوم ×4 + ${d.livings} صالات ×4 + ${d.dinings} غرف طعام ×2 + ${d.kitchenettes} مطابخ ×5 + ${d.wcs} دورات مياه ×1 + ${d.otherRooms} غرف ×2 + ${d.floors} أدوار ×2 = ${d.socketPoint}`);
+    d.acPoint = d.bedrooms + d.livings + d.dinings + d.rooms;
+    bs("acPoint", `${d.bedrooms} bedrooms + ${d.livings} livings + ${d.dinings} dinings + ${d.rooms} rooms = ${d.acPoint}`, `${d.bedrooms} غرف نوم + ${d.livings} صالات + ${d.dinings} غرف طعام + ${d.rooms} غرف = ${d.acPoint}`);
+    /* the lift: the layout's common.lift, else the design facts, else none */
+    if (maxLifts > 0) { d.lift = Math.round(maxLifts); bs("lift", `${d.lift} lifts on the fullest floor of the layouts` + src, `${d.lift} مصاعد في أكثر دور من التوزيعات` + src); }
+    else if (n(design.lifts) > 0) { d.lift = Math.round(n(design.lifts)); bs("lift", `${d.lift} lifts in the design facts`, `${d.lift} مصاعد في بيانات التصميم`); }
+    else bs("lift", "no lift in the layouts", "لا مصعد في التوزيعات");
+    /* the planters: the layout's figure, else what the layouts draw, else 8 per building */
+    if (n(t.planters) > 0) { d.planter = Math.round(n(t.planters)); bs("planter", `${d.planter} planters from the layouts` + src, `${d.planter} أحواض زراعة من التوزيعات` + src); }
+    else if (planters > 0) { d.planter = planters; bs("planter", `${planters} planters drawn on the layouts` + src, `${planters} أحواض زراعة مرسومة في التوزيعات` + src); }
+    else { d.planter = 8; bs("planter", "8 planters per building: a guess", "8 أحواض زراعة لكل مبنى: تخمين", "guessed"); }
+    d.stack = groundWcs > 0 ? groundWcs : maxWcs;
+    bs("stack", groundWcs > 0 ? `${groundWcs} wcs on the ground floor, one stack each` : `${maxWcs} wcs on the fullest floor, one stack each`, groundWcs > 0 ? `${groundWcs} دورات مياه في الأرضي، عمود لكل منها` : `${maxWcs} دورات مياه في أكثر دور، عمود لكل منها`);
+    const fp = n(design.footprintM2);
+    if (fp > 0) { d.roofOutlet = Math.max(2, Math.ceil(fp / 75 - 1e-9)); bs("roofOutlet", `${grp(fp)} m² footprint ÷ 75, at least 2 = ${d.roofOutlet}`, `${grp(fp)} م² مسقط ÷ 75، على الأقل 2 = ${d.roofOutlet}`); }
+    else if (layout) { d.roofOutlet = 4; bs("roofOutlet", "footprint unknown: 4", "المسقط غير معروف: 4", "guessed"); }
+    /* the facade: the layout's figure, else what was counted on the elevations, else a guess from the footprint, else unknown */
+    const above = layout ? d.aboveFloors : aboveFloorsFallback(pid, design), cFac = pid ? SY.countOf(pid, SY.BASE_COUNTS.m2Facade) : null;
+    if (n(t.facadeM2) > 0) { d.m2Facade = Math.round(n(t.facadeM2)); bs("m2Facade", `${grp(d.m2Facade)} m² facade from the layouts` + src, `${grp(d.m2Facade)} م² واجهة من التوزيعات` + src); }
+    else if (cFac && cFac.qty > 0) { d.m2Facade = Math.round(cFac.qty); const [en, ar] = countedText(cFac); bs("m2Facade", en, ar, cFac.confidence); }
+    else if (fp > 0 && above > 0) { const per = Math.round(4 * Math.sqrt(fp)); d.m2Facade = Math.round(per * 3.5 * above); bs("m2Facade", `perimeter ≈ ${per} m (from a ${grp(fp)} m² footprint) × 3.5 m × ${above} floors = ${grp(d.m2Facade)} m²`, `محيط ≈ ${per} م (من مسقط ${grp(fp)} م²) × 3.5 م × ${above} أدوار = ${grp(d.m2Facade)} م²`, "guessed"); }
+    else bs("m2Facade", "? " + PER.m2Facade[5], "؟ " + PER.m2Facade[6], "guessed");
+    if (n(t.boundaryM) > 0) { d.lmBoundary = n(t.boundaryM); bs("lmBoundary", `${d.lmBoundary} m of boundary wall from the layouts` + src, `${d.lmBoundary} م سور من التوزيعات` + src); }
+    else if (n(design.fencesM) > 0) { d.lmBoundary = n(design.fencesM); bs("lmBoundary", `${d.lmBoundary} m of fences in the design facts`, `${d.lmBoundary} م أسوار في بيانات التصميم`); }
+    else bs("lmBoundary", "? " + PER.lmBoundary[5], "؟ " + PER.lmBoundary[6], "guessed");
+    /* a drawing count overrides a derived base */
+    if (pid) for (const [base, what] of Object.entries(SY.BASE_COUNTS)) {
+      if (base === "m2Facade") continue;
+      const w = SY.countOf(pid, what); if (!w) continue;
+      d[base] = w.qty; const [en, ar] = countedText(w); bs(base, en, ar, w.confidence);
+    }
+    return d;
+  };
+  /** The project's counting bases (derived of its layout, with the drawing counts), memoised. */
+  SY.bases = (pid) => memo("bases:" + pid, () => SY.derived(SY.layout(pid), pid));
+
+  /* ---------------- the predictor ---------------- */
+  const rowId = (r) => r.key + "-" + r.fix + "-" + U.slug(r.item);
+  /**
+   * The current priced BOQ's first line for a catalog item: {key, qty, unit} | "none"; undefined when the project has no current priced
+   * BOQ (SL.boq absent, no version, the newest version not `current` (a draft, an old one), or unpriced): the screen then shows no
+   * compare line and no "compare" heading (its own guard is the same one: status === "current" and priced; spec §6).
+   */
+  const boqOf = (pid, itemId) => {
+    const b = B(); if (!itemId || !b) return undefined;
+    const cur = b.current(pid); if (!cur || cur.status !== "current" || !b.priced(cur)) return undefined;
+    const l = b.lines(cur.id).find((x) => x.itemId === itemId);
+    return l ? { key: l.key, qty: U.num(l.qty), unit: l.unit || "" } : "none";
+  };
+  /** One rule on the bases → a row, or null when its base is 0 (nothing to buy); a fact the layout cannot give leaves qty null and basis.text "? <fact>". */
+  const ruleRow = (pid, r, d, items) => {
+    const per = PER[r.per]; if (!per) return null;
+    const baseKey = per[0], cnt = r.countKey ? SY.countOf(pid, r.countKey) : null;
+    const rule = r.qty + " " + r.unit + " per " + per[3], ruleAr = r.qty + " " + unitAr(r.unit) + " لكل " + per[4];
+    let qty, basis, confidence;
+    if (cnt) { const [text, textAr] = countedText(cnt); qty = cnt.qty; confidence = cnt.confidence; basis = { rule, ruleAr, fact: r.countKey, value: cnt.qty, text, textAr }; }
+    else {
+      const base = d[baseKey];
+      if (base == null) return { id: rowId(r), key: r.key, fix: r.fix, item: r.item, ar: r.ar, unit: r.unit, qty: null, itemId: r.itemId && live(items[r.itemId]) ? r.itemId : "", basis: { rule, ruleAr, fact: baseKey, value: null, text: "? " + per[5], textAr: "؟ " + per[6] }, confidence: "guessed", trade: r.trade || "", per: r.per, countKey: r.countKey || "", counted: false, missing: baseKey, note: r.note || "", est: true };
+      if (!(base > 0)) return null;
+      qty = base * r.qty; confidence = weakest(d.confidence[baseKey] || "estimated", r.confidence || "counted");   // the base's confidence, unless the rule itself is weaker
+      const text = (r.per === "building" ? per[1] : grp(base) + " " + per[1]) + " × " + r.qty + " " + r.unit, textAr = (r.per === "building" ? per[2] : grp(base) + " " + per[2]) + " × " + r.qty + " " + unitAr(r.unit);
+      basis = { rule, ruleAr, fact: baseKey, value: base, text: d.confidence[baseKey] && d.confidence[baseKey] !== "estimated" && d.basis[baseKey] ? text + " · " + d.basis[baseKey] : text, textAr: d.confidence[baseKey] && d.confidence[baseKey] !== "estimated" && d.basisAr[baseKey] ? textAr + " · " + d.basisAr[baseKey] : textAr };
+    }
+    qty = SY.roundQty(qty, r.unit); if (!(qty > 0)) return null;
+    const itemId = r.itemId && live(items[r.itemId]) ? r.itemId : "";
+    const row = { id: rowId(r), key: r.key, fix: r.fix, item: r.item, ar: r.ar, unit: r.unit, qty, itemId, basis, confidence, trade: r.trade || "", per: r.per, countKey: r.countKey || "", counted: !!cnt, note: r.note || "", est: true };
+    if (itemId) { const bq = boqOf(pid, itemId); if (bq !== undefined) row.boq = bq; }
+    return row;
+  };
+  const fixSort = (rows) => rows.map((r, i) => [r, i]).sort((a, b) => (SY.FIX_ORDER.indexOf(a[0].fix) - SY.FIX_ORDER.indexOf(b[0].fix)) || a[1] - b[1]).map((x) => x[0]);
+  /**
+   * The predicted buy list for one system (key) or all of them in the fixed order, grouped by fix then in rule order:
+   * [{id, key, fix, item, ar, unit, qty (null = "?"), itemId, basis: {rule, ruleAr, fact, value, text, textAr}, confidence, trade, per, countKey, counted, note, est:true, boq?: {key, qty, unit} | "none", missing?}]
+   * [] without a layout (an honest empty list); the exterior comes from extPredict.
+   */
+  SY.predict = (pid, key) => memo("predict:" + pid + ":" + (key || "*"), () => {
+    if (!key) return SY.KEYS.flatMap((k) => SY.predict(pid, k));
+    if (key === "ext") return SY.extPredict(pid);
+    if (!SY.layout(pid)) return [];
+    const d = SY.bases(pid), items = M.items(), out = [];
+    for (const r of SY.RULES) { if (r.key !== key) continue; const row = ruleRow(pid, r, d, items); if (row) out.push(row); }
+    return fixSort(out);
+  });
+  /** Rows and quantities per fix for one system: {<fix>: {rows, qty, unknown}} (the "1st ~24 · 2nd ~96 · final ~40" bursts). */
+  SY.byFix = (pid, key) => { const o = {}; for (const f of SY.FIX_ORDER) o[f] = { rows: 0, qty: 0, unknown: 0 }; for (const r of SY.predict(pid, key)) { o[r.fix].rows++; if (r.qty == null) o[r.fix].unknown++; else o[r.fix].qty += r.qty; } return o; };
+
+  /* ---------------- the facade: options, the materials board, the choice, the exterior rows ---------------- */
+  const natKey = (k) => String(k).replace(/\d+/g, (m) => m.padStart(5, "0"));
+  /** A share key as the board writes it (a deck may say "paint" for "paint-textured"). */
+  const MAT_ALIAS = { paint: "paint-textured", "textured-paint": "paint-textured", "exterior-paint": "paint-textured", stone: "riyadh-stone", riyadh: "riyadh-stone", louver: "louvers", glazing: "glass" };
+  const matKey = (k) => { const s = U.slug(k); return MAT_ALIAS[s] || s; };
+  const shares = (m) => { const o = {}; for (const [k, v] of Object.entries(isObj(m) ? m : {})) { const s = n(v); if (s > 0) o[matKey(k)] = (o[matKey(k)] || 0) + s; } return o; };
+  const chosenKey = (pid) => { const p = M.project(pid), c = p && isObj(p.choices) && live(p.choices.facade) ? p.choices.facade : null; return c && c.option ? String(c.option) : ""; };
+  /** The facade options across the decks (the newest deck wins per key), o1 first: [{key, name, ar, pages, views, traits, traitsAr, materials, note, drawingId, assetId, chosen}]. */
+  SY.options = (pid) => memo("options:" + pid, () => {
+    const by = {}, ck = chosenKey(pid);
+    for (const d of SY.decks(pid)) {
+      if (!isObj(d.options)) continue;
+      for (const [k, o] of Object.entries(d.options)) {
+        if (!live(o) || by[k]) continue;
+        by[k] = { key: k, name: String(o.name || ""), ar: String(o.ar || ""), pages: U.uniq(arr(o.pages).map(U.num).filter((x) => x > 0)).sort(asc), views: arr(o.views).map(String), traits: arr(o.traits).map(String), traitsAr: arr(o.traitsAr).map(String), materials: shares(o.materials), note: String(o.note || ""), drawingId: d.id, assetId: assetOf(d), chosen: k === ck };
+      }
+    }
+    return U.sortBy(Object.values(by), (o) => natKey(o.key));
+  });
+  /** The materials board, merged across decks (the newest wins per key): {<mat>: {key, name, ar, use, unit, drawingId}}. */
+  SY.materials = (pid) => memo("materials:" + pid, () => {
+    const out = {};
+    for (const d of SY.decks(pid)) for (const [k, m] of Object.entries(isObj(d.materials) ? d.materials : {})) { const key = matKey(k); if (live(m) && !out[key]) out[key] = { key, name: String(m.name || k), ar: String(m.ar || ""), use: String(m.use || ""), unit: String(m.unit || "m2"), drawingId: d.id }; }
+    return out;
+  });
+  /** The facade decision (projects.choices.facade): {option, drawingId, at, by, note, opt (the option, or null when no deck lists it)}, or null. */
+  SY.chosen = (pid) => { const p = M.project(pid), c = p && isObj(p.choices) && live(p.choices.facade) ? p.choices.facade : null; if (!c || !c.option) return null; const key = String(c.option); return { option: key, drawingId: String(c.drawingId || ""), at: String(c.at || ""), by: String(c.by || ""), note: String(c.note || ""), opt: SY.options(pid).find((o) => o.key === key) || null }; };
+  /**
+   * The exterior rows: the chosen option's material shares × m2Facade (one row per material: the rule's wording, else the board's), then
+   * the rows common to every option. Only the common rows when nothing is chosen; [] when the project has neither a layout nor a facade deck.
+   */
+  SY.extPredict = (pid) => memo("ext:" + pid, () => {
+    const lay = SY.layout(pid), opts = SY.options(pid);
+    if (!lay && !opts.length) return [];
+    const d = Object.assign({}, SY.bases(pid), { building: 1 }), items = M.items(), board = SY.materials(pid), ch = SY.chosen(pid), opt = ch && ch.opt, out = [];
+    if (opt) {
+      const name = opt.name || opt.key, nameAr = opt.ar || opt.name || opt.key, conf = d.confidence.m2Facade || "estimated", known = d.m2Facade != null && d.m2Facade > 0;
+      for (const [mat, share] of Object.entries(opt.materials)) {
+        const r = SY.RULES.find((x) => x.key === "ext" && x.share === mat), b = board[mat] || {}, pct = Math.round(share * 100) + "%";
+        const unit = r ? r.unit : "m2", qty = known ? SY.roundQty(share * d.m2Facade, unit) : null; if (known && !(qty > 0)) continue;
+        const rule = pct + " of the facade", ruleAr = pct + " من الواجهة";
+        const text = known ? `${pct} of ${grp(d.m2Facade)} m² facade · ${name}` : `? ${PER.m2Facade[5]} · ${pct} of the facade · ${name}`, textAr = known ? `${pct} من ${grp(d.m2Facade)} م² واجهة · ${nameAr}` : `؟ ${PER.m2Facade[6]} · ${pct} من الواجهة · ${nameAr}`;
+        const itemId = r && r.itemId && live(items[r.itemId]) ? r.itemId : "";
+        const row = { id: r ? rowId(r) : "ext-external-" + U.slug(mat), key: "ext", fix: "external", item: r ? r.item : b.name || mat, ar: r ? r.ar : b.ar || "", unit, qty, itemId, basis: { rule, ruleAr, fact: "m2Facade", value: known ? d.m2Facade : null, text: known && conf !== "estimated" ? text + " · " + d.basis.m2Facade : text, textAr: known && conf !== "estimated" ? textAr + " · " + d.basisAr.m2Facade : textAr }, confidence: known ? conf : "guessed", trade: r ? r.trade : "", per: "m2Facade", countKey: "", counted: false, note: (r && r.note) || b.use || "", share, material: mat, option: opt.key, est: true };
+        if (!known) row.missing = "m2Facade";
+        if (itemId) { const bq = boqOf(pid, itemId); if (bq !== undefined) row.boq = bq; }
+        out.push(row);
+      }
+    }
+    for (const r of SY.RULES) { if (r.key !== "ext" || r.share) continue; const row = ruleRow(pid, r, d, items); if (row) out.push(row); }
+    return out;
+  });
+
+  /* ---------------- the links a system tile shows: the jobs, the BOQ sections ---------------- */
+  /** Does a doc's systems{<key>:true} map name the system (a null entry = removed)? */
+  const hasSystem = (o, key) => !!o && isObj(o.systems) && !!o.systems[key];
+  /** The jobs that build a system (jobs.systems{<key>:true}; a null entry = removed), in project order; [] = "no job yet". Milestones never build. */
+  SY.jobsFor = (pid, key) => M.jobs(pid).filter((j) => hasSystem(j, key));
+  SY.jobs = SY.jobsFor;
+  /** The first such job, or null. */
+  SY.job = (pid, key) => SY.jobsFor(pid, key)[0] || null;
+  /** {<key>: [jobs]} for every system that has one. */
+  SY.jobsBySystem = (pid) => { const o = {}; for (const k of SY.KEYS) { const js = SY.jobsFor(pid, k); if (js.length) o[k] = js; } return o; };
+  /** The current BOQ's sections tagged with a system (sections.*.systems{<key>:true}, or a line carrying it): [{id, no, name, ar, …}]. [] without SL.boq. */
+  SY.boqSections = (pid, key) => { const b = B(); if (!b) return []; const cur = b.current(pid); if (!cur) return []; const tagged = new Set(b.lines(cur.id).filter((l) => hasSystem(l, key)).map((l) => l.sectionId)); return b.sections(cur).filter((s) => hasSystem(s, key) || tagged.has(s.id)); };
+
+  /* ---------------- the checklist text (Copy as checklist): item · ~qty unit · fix · basis; no price column, never an input to tools/boq_import.py ---------------- */
+  /** Plain text, one line per row in the viewer's language (a heading line per system when the rows span several); "" for nothing. */
+  SY.text = (rows) => {
+    const sys = SY.SYSTEMS(), fixes = SY.FIXES(), list = (rows || []).filter(Boolean), keys = U.uniq(list.map((r) => r.key)), lines = [];
+    const line = (r) => {
+      const f = fixes[r.fix] || { name: String(r.fix || ""), ar: String(r.fix || "") }, b = r.basis && typeof r.basis === "object" ? U.L(r.basis.text, r.basis.textAr) : String(r.basis || "");
+      const qty = r.qty == null ? "?" : "~" + grp(r.qty) + (r.unit ? " " + U.unit(r.unit) : "");
+      return [U.L(r.item, r.ar || r.item), qty, U.L(f.name, f.ar), b].filter(Boolean).join(" · ");
+    };
+    for (const key of SY.KEYS.concat(keys.filter((k) => !SY.KEYS.includes(k)))) {
+      const rs = list.filter((r) => r.key === key); if (!rs.length) continue;
+      if (keys.length > 1 && sys[key]) lines.push(sys[key].mono + " · " + U.L(sys[key].name, sys[key].ar));
+      for (const r of rs) lines.push(line(r));
+    }
+    return lines.join("\n") + (lines.length ? "\n" : "");
+  };
+})(window.SL);
+
 /* ---- 15-flags.js ---- */
 /* 15-flags.js: internal-controls engine SL.flags (every code in spec part 2 §C), the flag sheet (A.flag) and the #flags view.
  * Flags are computed (never stored). Acks live on the owning doc (costs / timesheet crew block / jobs / projects). */
@@ -5560,6 +6323,160 @@ window.SL = window.SL || {};
   };
 })(window.SL);
 
+/* ---- 16-features.js ---- */
+/* 16-features.js — SL.features: the registry every screen and global action of Mimar appears in exactly once
+ * (spec part 4 §4.6, §5, §9). The feature map (#map, 57-map.js) draws it; the position strip under the header
+ * (ui.position, 20-ui.js) reads it through position(). One node per bare route name; a route with an argument
+ * (#job.<id>, #crew.<id>, #float.<wid>, #item.<id>, #systems.<key>) is an "opens ›" line under its parent, never a node,
+ * except Facade (#systems.ext), the one argument node. A screen that is a node's own (Timeline, Ledger under Project) is an
+ * "opens ›" line marked bare. Loads before 20-ui: nothing here touches SL.ui or the DOM at load; position() reads
+ * SL.systems / SL.boq / SL._admin lazily when it runs. Every label is built on the call (U.L at call time, never hoisted),
+ * so a language switch re-reads it. */
+(function (SL) {
+  "use strict";
+  const U = SL.util, M = SL.model, S = () => SL.S;
+  const F = (SL.features = SL.features || {});
+
+  F.GROUPS = ["design", "buy", "build", "handover", "always"];
+  /** The group word in the viewer's language. */
+  F.groupName = (g) => ({ design: U.L("Design", "التصميم"), buy: U.L("Buy", "الشراء"), build: U.L("Build", "التنفيذ"), handover: U.L("Handover", "تسليم الأعمال"), always: U.L("Always", "في كل المراحل") })[g] || "";
+
+  /** A node: {id, group, name, ar, burst, burstAr, routes, example?, opens?, act?, applies?, planned?, menu?, ro?, arg?, coming?}.
+   *  name / ar / burst / burstAr are HTML-safe (literals, data through U.esc). An "opens" entry is {route, name, ar, example?,
+   *  applies?, bare?} (bare: a screen of its own, not an argument of the parent). coming = [{name, ar, planned}]: what the node
+   *  gains in a later phase ("Coming · phase 2 › People"), muted on the map. planned nodes are muted and not tappable. */
+  const N = (id, group, name, ar, burst, burstAr, x) => Object.assign({ id, group, name, ar, burst, burstAr, routes: [id] }, x || {});
+  const pre = (pid) => M.isPre(M.project(pid));
+  const usesFloat = (pid) => !!(pid && M.usesFloat(pid));
+  /** A list burst: every entry [en, ar, off?] is its own short text (a span) so no text run grows past a burst; an entry
+   *  that is not on this project (Top up float without a float) is muted, never hidden. sep joins them (" · " or ", "). */
+  const E = (list, ar, sep) => list.map((e) => `<span class="node-e${e[2] ? " off" : ""}">${ar ? e[1] : e[0]}</span>`).join(sep || " · ");
+  /** Every node, in map order. pid shapes the few bursts that name this project's people and phase. */
+  F.list = (pid) => {
+    const owner = U.esc(M.walletName(M.ownerWalletId()));
+    const fl = usesFloat(pid), who = fl ? U.esc(M.foremanName(pid)) : "";
+    const isPre = !!pid && pre(pid);
+    // the (+) sheet's entries (60-docs.js), by phase: a building project adds photos, crew days and equipment; a project in its
+    // design / buy phase adds a receipt or invoice, and its drawings, BOQs and bids go to Claude in chat
+    const plus = (isPre
+      ? [["Receipt / Invoice", "سند / فاتورة"]]
+      : [["Photo (receipt, invoice, quote)", "صورة (فاتورة، سند، عرض سعر)"], ["Crew day", "يوم عمالة"], ["Equipment", "المعدات"]])
+      .concat([["Type a purchase", "إدخال مشتريات"], ["Price quote", "عرض سعر"], ["Service", "خدمة"], ["Other cost", "تكلفة أخرى"], ["Top up float", "تعبئة العهدة", !fl], ["Pay someone", "الدفع لشخص"], ["Capital in", "إيداع رأس مال"], ["New job", "بند جديد"]])
+      .concat(isPre ? [["Drawings, BOQs and bids go to Claude in chat", "المخططات وجداول الكميات والعطاءات تُرسل إلى Claude في المحادثة"]] : []);
+    const more = [["Language", "اللغة"], ["View as investor", "العرض كمستثمر"], ["Download CSV", 'تنزيل <span lang="en">CSV</span>'], ["Sign out", "تسجيل الخروج"]];
+    const settings = [["project", "المشروع"], ["crews", "العمالة"], ["equipment", "المعدات"], ["items", "الأصناف"], ["suppliers", "الموردون"], ["wallets", "المحافظ"], ["rates", "الأجور"], ["flags", "التنبيهات"], ["data", "البيانات"], ["language", "اللغة"], ["theme", "المظهر"]];
+    return [
+      // Design
+      N("design", "design", "Design", "التصميم", "drawings, milestones, facts", "المخططات، المحطات، البيانات", { menu: true, ro: true }),
+      N("systems", "design", "Systems", "الأنظمة", "the building's systems, what each needs", "أنظمة المبنى وما يحتاجه كلٌّ منها", { example: "p2~systems.drain", opens: [{ route: "systems", name: "a system", ar: "نظام", example: "p2~systems.drain" }], menu: true, ro: true }),
+      N("systems-ext", "design", "Facade", "الواجهة", "the exterior options, choose one", "خيارات الواجهة، اختر واحداً", { routes: ["systems"], arg: "ext", example: "p2~systems.ext", ro: true }),
+      // Buy
+      N("boq", "buy", "BOQ", "جدول الكميات", "budget by section, still to spend", "الميزانية حسب القسم، المتبقي للصرف", { example: "p2~boq", opens: [{ route: "boq", name: "a line", ar: "صنف", example: "p2~boq.L3-2" }, { route: "boq", name: "a version", ar: "نسخة", example: "p2~boq.boq-p2-v1" }], menu: true, ro: true }),
+      N("bids", "buy", "Bids", "العطاءات", "packages and offers, Accept", "الحزم والعروض، القبول", { example: "p2~bids", ro: true }),
+      N("order", "buy", "To order", "للطلب", "what to buy by week", "ما يُشترى أسبوعاً بأسبوع", { example: "p2~order", planned: "phase 3" }),
+      // Build
+      N("balances", "build", "Balances", "الأرصدة", fl ? "paid, owed, " + who + "'s float · home while building" : "paid, owed · home while building", fl ? "المدفوع، المستحق، عهدة " + who + " · الرئيسية أثناء التنفيذ" : "المدفوع، المستحق · الرئيسية أثناء التنفيذ", { menu: true }),
+      N("audit", "build", "Crews", "العمالة", "who came, day by day", "مَن حضر، يوماً بيوم", { example: "audit.jobs", applies: (p) => !pre(p), menu: true }),
+      N("eqaudit", "build", "Equipment", "المعدات", "what is on site", "ما في الموقع", { applies: (p) => !pre(p), menu: true }),
+      N("invaudit", "build", "Invoices", "الفواتير", "received, paid, prices", "المستلمة، المدفوعة، الأسعار", { menu: true }),
+      N("today", "build", "Today", "اليوم", "the day board", "لوحة اليوم", { example: "today.2026-09-22", applies: (p) => !pre(p), menu: true }),
+      N("week", "build", "Week", "الأسبوع", "crews × days", "العمالة × الأيام", { example: "week.2026-09-12", opens: [{ route: "crew", name: "Crew week", ar: "أسبوع الطاقم", example: "crew.c_plaster" }], applies: (p) => !pre(p) }),
+      N("photos", "build", "Photos", "الصور", "site photos by day", "صور الموقع يوماً بيوم", { planned: "phase 2", ro: true }),
+      // Handover
+      N("handover", "handover", "Handover", "تسليم الأعمال", "checklist, snags, sign-off", "قائمة التحقق، الملاحظات، التوقيع", { planned: "phase 3", ro: true }),
+      // Always
+      N("projects", "always", "Projects", "المشاريع", "all projects, floats · switch ▾ · + New project · Edit project", "كل المشاريع، العُهد · تبديل ▾ · + مشروع جديد · تعديل المشروع", { ro: true }),
+      // every phase has jobs: Job, Timeline and Ledger open from Project (§5)
+      N("project", "always", "Project", "المشروع", "jobs, strip, as-of", "البنود، الشريط، حتى تاريخ", { opens: [{ route: "job", name: "Job", ar: "البند", example: "job.job-tiling" }, { route: "timeline", name: "Timeline", ar: "الجدول الزمني", example: "timeline.crews", bare: true }, { route: "ledger", name: "Ledger", ar: "الدفتر", bare: true }], menu: true, ro: true }),
+      N("pay", "always", "Pay", "الدفع", "pay week · top up · pay someone · count cash · why?", "أسبوع الدفع · تعبئة · الدفع لشخص · جرد النقد · لماذا؟", { opens: [{ route: "float", name: "Float", ar: "العهدة", example: "float.w_sayed", applies: usesFloat }, { route: "statement", name: "Statement", ar: "الكشف", example: "statement.w_sayed", applies: usesFloat }] }),
+      N("capital", "always", "Capital", "رأس المال", "investor money in", "أموال المستثمرين الواردة", { menu: true }),
+      N("inbox", "always", "Inbox", "الوارد", "papers in, to review", "مستندات واردة، للمراجعة", { routes: ["inbox", "docs"] }),
+      N("invoices", "always", "Invoice papers", "مستندات الفواتير", "every paper", "كل مستند"),
+      N("quotes", "always", "Quotes", "عروض الأسعار", "offers", "العروض", { opens: [{ route: "quote", name: "Quote", ar: "عرض سعر", example: "quote.quo-jabal-rukam-7" }] }),
+      N("prices", "always", "Prices", "الأسعار", "the price book", "دفتر الأسعار", { opens: [{ route: "item", name: "Item", ar: "الصنف", example: "item.itm_cement-yamama" }] }),
+      N("flags", "always", "Flags", "التنبيهات", "what needs " + owner, "ما يحتاج " + owner, { menu: true }),
+      N("report", "always", "Report", "التقرير", "the investor view, PDF", 'عرض المستثمر، <span lang="en">PDF</span>', { menu: true, ro: true }),
+      N("settings", "always", "Settings", "الإعدادات", E(settings, false, ", "), E(settings, true, "، "), { example: "settings.crews", coming: [{ name: "People", ar: "الأشخاص", planned: "phase 2" }], menu: true }),
+      N("map", "always", "Map", "خريطة التطبيق", "this map", "هذه الخريطة", { menu: true, ro: true }),
+      // the two global actions: the (+) sheet (its entries follow the phase, 60-docs.js) and the ⋯ menu
+      N("plus", "always", "(+) Add", "(+) إضافة", E(plus, false), E(plus, true), { routes: [], act: "add", coming: [{ name: "Site photo · Drawing · BOQ · Bid", ar: "صورة موقع · مخطط · جدول الكميات · عطاء", planned: "phase 2" }] }),
+      N("more", "always", "⋯ More", "⋯ المزيد", E(more, false), E(more, true), { routes: [], act: "menu" }),
+    ];
+  };
+  /** The node a bare route belongs to (its own route, an alias, or an "opens ›" route under it), or null. */
+  F.node = (route, pid) => F.list(pid).find((n) => !n.arg && (n.routes.includes(route) || (n.opens || []).some((o) => o.route === route))) || null;
+  /** The argument node of a route + first argument (Facade = systems.ext), or null. */
+  F.argNode = (route, arg, pid) => (arg ? F.list(pid).find((n) => n.arg && n.routes.includes(route) && n.arg === arg) || null : null);
+  F.groupOf = (route) => { const n = F.node(route); return n ? n.group : ""; };
+  /** The "opens ›" entry a route is listed under, or null; a node's own route (systems, boq) is never an opens entry of itself. */
+  F.opensOf = (n, route) => (n && route !== n.routes[0] && n.opens || []).find((o) => o.route === route) || null;
+  /** The map id of where a route sits: the argument node's id (systems-ext), the owner's id, or "<owner>-<route>" for an opens route (project-job). */
+  F.hereId = (route, args, pid) => {
+    const a = F.argNode(route, (args || [])[0], pid); if (a) return a.id;
+    const n = F.node(route, pid); if (!n) return route || "";
+    const o = F.opensOf(n, route);
+    return o ? n.id + "-" + o.route : n.id;
+  };
+  /** The node and opens entry a map id names: {node, open} ("systems-ext" → Facade; "project-job" → Project + Job). */
+  F.byId = (id, pid) => {
+    const nodes = F.list(pid), exact = nodes.find((n) => n.id === id);
+    if (exact) return { node: exact, open: null };
+    const i = String(id || "").lastIndexOf("-");
+    if (i < 0) return { node: null, open: null };
+    const n = nodes.find((x) => x.id === id.slice(0, i)), o = n && (n.opens || []).find((x) => x.route === id.slice(i + 1));
+    return o ? { node: n, open: o } : { node: null, open: null };
+  };
+  const items = () => { const c = S().catalog; return (c && c.items && c.items.items) || {}; };
+  /** A route's argument as a crumb (HTML): a system key → its word, a job → its code, a date → U.dShort, a wallet → its holder,
+   *  a crew / item / Settings section / frozen report / BOQ line → its name, anything else as typed through U.t. */
+  F.argLabel = (route, a, i, pid) => {
+    if (a == null || a === "") return "";
+    if (U.isISO(a)) return U.esc(U.dShort(a));
+    if (route === "systems") { const SY = SL.systems && SL.systems.SYSTEMS ? SL.systems.SYSTEMS() : null; return SY && SY[a] ? U.t(U.nm(SY[a])) : U.t(a); }
+    if (route === "job" || route === "handover") return M.job(a) ? U.esc(M.jobCode(a)) : U.t(a);
+    if ((route === "float" || route === "statement") && i === 0) return U.esc(M.walletName(a) || a);
+    if (route === "crew" && i === 0) return U.t(M.crewName(a));
+    if (route === "item") { const it = items()[a]; return it ? U.t(U.nm(it)) : U.t(a); }
+    if (route === "settings") { const sec = ((SL._admin && SL._admin.SECTIONS) || []).find((s) => s[0] === a); return sec ? U.L(sec[1], sec[2]) : U.t(a); }
+    if (route === "report") { const r = (S().reports || {})[a]; return r && r.asOf ? U.esc(U.dShort(r.asOf)) : U.t(a); }
+    if (route === "boq" && SL.boq) { const l = SL.boq.line ? SL.boq.line(pid, a) : null; if (l && l.no) return U.t(l.no); const d = SL.boq.doc ? SL.boq.doc(a) : null; if (d) return "v" + U.esc(d.version); }
+    if (route === "quote") { const q = (S().quotes || {})[a]; if (q && !q.void) return U.t([q.supplier, q.no].filter(Boolean).join(" ")); }
+    return U.t(a);
+  };
+  /** "#[pid~]name[.a[.b]]" → {pid, name, args} (the router's grammar; "docs" reads as inbox). */
+  const parse = (hash) => {
+    let h = String(hash || "").replace(/^#/, ""), pid = null;
+    const t = h.indexOf("~"); if (t > 0) { pid = h.slice(0, t); h = h.slice(t + 1); }
+    const parts = h.split(".").filter((x) => x !== ""); let name = parts.shift() || "";
+    if (name === "docs") name = "inbox";
+    return { pid, name, args: parts };
+  };
+  /** The crumbs of a route: [{kind: "project"|"screen"|"arg", label (HTML), go (hash|null), route}] — project code › the
+   *  screen (an opens route reads its "opens" name) › one crumb per argument. The bottom-tab crumb and the links a viewer
+   *  may follow are ui.position's (20-ui), which has the tab bars. #projects reads "Projects"; #map ignores its marker argument. */
+  F.position = (route, pid) => {
+    const r = typeof route === "string" ? parse(route) : route || { name: "", args: [] };
+    const name = r.name || "", args = name === "map" ? [] : r.args || [];
+    pid = pid || r.pid || "";
+    const p = pid ? M.project(pid) : null;
+    const href = (n, ...a) => "#" + (pid && n !== "projects" ? pid + "~" : "") + [n, ...a.filter((x) => x != null && x !== "")].join(".");
+    const crumbs = [];
+    if (p && name !== "projects") crumbs.push({ kind: "project", label: U.t(p.code || U.nm(p) || pid), go: "#projects", route: "projects" });
+    const n = F.node(name, pid);
+    if (!n) { crumbs.push({ kind: "screen", label: U.t(name), go: href(name), route: name }); return crumbs; }
+    const main = n.routes[0] || name, o = F.opensOf(n, name);
+    // an opens route names itself: a screen of its own (Timeline) links to itself, an argument screen (Job) to its parent
+    const self = !o || !!o.bare, to = self ? name : main;
+    crumbs.push({ kind: "screen", label: o ? U.L(o.name, o.ar) : U.L(n.name, n.ar), go: href(to), route: to });
+    const sub = F.argNode(name, args[0], pid);
+    if (sub) { crumbs.push({ kind: "arg", label: U.L(sub.name, sub.ar), go: href(name, args[0]), route: name }); return crumbs; }
+    args.forEach((a, i) => crumbs.push({ kind: "arg", label: F.argLabel(name, a, i, pid), go: href(name, ...args.slice(0, i + 1)), route: name }));
+    return crumbs;
+  };
+  /** The registry as the spec names it (§0.6): read at access time so the labels follow the language. */
+  Object.defineProperty(SL, "FEATURES", { get: () => F.list(), configurable: true, enumerable: true });
+})(window.SL);
+
 /* ---- 20-ui.js ---- */
 /* SL.ui — router, render loop, app chrome (header, strips, tabs, rails), sheets, toast, shared components.
  * Views register in SL.views[name] = {tab, render(route) → html, after?(el, route), asOf?:true}.
@@ -5580,6 +6497,8 @@ window.SL = window.SL || {};
     inbox: "docs", invoices: "docs", quotes: "docs", prices: "docs", item: "docs", quote: "docs", review: "docs", docs: "docs",
     report: "report", flags: "flags", settings: "settings", projects: "projects",
     design: "design", boq: "boq", bids: "boq", order: "boq", // the Design and Buy tabs of a project in its design / buy phase
+    systems: "design", // the building's systems (spec part 4 §6) sit under the Design tab
+    map: "map", // the feature map (spec part 4 §4.6): reached from ⋯ and the position strip, like Flags and Settings it lights no tab
   };
   ui.TAB_OF = TAB_OF;
   /** Parse "#[pid~]name[.a[.b]]" → {pid, name, args}. Unknown names fall back to "today". */
@@ -5665,7 +6584,7 @@ window.SL = window.SL || {};
   ui.render = render;
   /** Screens a read-only viewer (investor, or "View as investor") may open. Everything else lands on Report:
    *  Pay, float statements, the inbox, flags and settings carry internal notes and money actions. */
-  const RO_OK = new Set(["report", "project", "job", "timeline", "ledger", "projects", "design", "boq", "bids", "photos", "handover"]);
+  const RO_OK = new Set(["report", "project", "job", "timeline", "ledger", "projects", "design", "boq", "bids", "photos", "handover", "systems", "map"]);
   ui.RO_OK = RO_OK;
   function renderNow() {
     if (S().ready && ui.readOnlyUI() && !RO_OK.has(ui.route.name)) {
@@ -5774,8 +6693,31 @@ window.SL = window.SL || {};
     if (s.quotaFull) h += '<div class="strip full">' + U.L("Storage full (5,000 documents). Archive a finished project in Settings › Data.", "التخزين ممتلئ (5,000 مستند). أرشف مشروعاً منتهياً من الإعدادات › البيانات.") + "</div>";
     if (ui.asOfBand(v)) h += '<div class="strip asof">' + U.L("Viewing as of ", "عرض حتى تاريخ ") + U.esc(U.dShort(ui.asOf)) + U.L(", not today", "، وليس اليوم") + ' · <button data-act="asOfToday">' + U.L("Back to today", "العودة إلى اليوم") + "</button></div>";
     if (M.identityFailures && M.identityFailures.length) h += '<div class="strip full">' + U.L("Totals don't reconcile (X2). Tell Claude Code: \"check Mimar identities\".", 'الإجماليات غير متطابقة (X2). أخبر Claude Code: "<span lang="en">check Mimar identities</span>".') + "</div>";
+    // the position strip (spec part 4 §4.5) is the last band on every screen, viewers included; it needs the registry (16-features)
+    h += ui.position();
     return h;
   }
+  /** The "you are here" line: "LC › Design › Systems › Drainage" from SL.features — project code › the bottom tab the screen
+   *  belongs to (when the bar in force has it; ⋯ screens have none) › the screen › its arguments. Every crumb but the last
+   *  navigates (a viewer only where the route is in RO_OK); the last one opens the map with this screen marked. The chevron
+   *  is a plain › text node: bidi mirrors it under dir=rtl (docs/i18n.md). "" until SL.features is loaded. */
+  ui.position = (route) => {
+    const F = SL.features; if (!F || !F.position) return "";
+    const r = route || ui.route, pid = ui.pid(), ro = ui.readOnlyUI();
+    const crumbs = F.position(r, pid); if (!crumbs.length) return "";
+    // the bottom tab the screen belongs to, when the bar in force has it and the screen is not a tab of its own
+    // (a viewer's Timeline tab; ⋯ screens — Flags, Settings, Map, Report — light no tab and get no crumb)
+    const tab = TAB_OF[r.name], bar = ro ? (ui.isPre(pid) ? RO_PRE_TABS() : RO_TABS()) : (ui.isPre(pid) ? PRE_TABS() : TABS());
+    const tb = tab && !bar.some(([k]) => k === r.name) ? bar.find(([k]) => k === tab) : null, tabRoute = tab === "docs" ? "inbox" : tab;
+    if (tb && tabRoute !== r.name) crumbs.splice(crumbs[0] && crumbs[0].kind === "project" ? 1 : 0, 0, { kind: "tab", label: tb[1], go: ui.href(tabRoute), route: tabRoute });
+    const last = crumbs.length - 1, here = ui.href("map", F.hereId ? F.hereId(r.name, r.args, pid) : r.name);
+    // the chevron is a bare › text node in both languages: bidi mirrors it under dir=rtl, nothing is hand-written
+    return `<nav class="pos" aria-label="${U.L("Where you are", "موقعك في التطبيق")}">` + crumbs.map((c, i) => {
+      const go = i === last ? here : c.go, ok = !!go && (!ro || i === last || RO_OK.has(c.route || ""));
+      const cur = i === last ? ' aria-current="page"' : "";
+      return ok ? `<button type="button" class="lnk"${cur} data-go="${U.esc(go)}"><span class="pos-t">${c.label}</span></button>` : `<span${cur}><span class="pos-t">${c.label}</span></span>`;
+    }).join(" › ") + "</nav>";
+  };
   /* The tab bar follows the project's phase (spec part 3 §0.15): build / handover keep today's bar; design / buy get
    * Design · Buy in place of Home · Audit. Read-only viewers get a phase-aware bar too. */
   const TABS = () => [["balances", U.L("Home", "الرئيسية"), "⌂"], ["audit", U.L("Audit", "المراجعة"), "☷"], ["project", U.L("Project", "المشروع"), "▤"], ["+", "", ""], ["pay", U.L("Pay", "الدفع"), "◈"], ["docs", U.L("Docs", "المستندات"), "▦"]];
@@ -5800,9 +6742,9 @@ window.SL = window.SL || {};
     const ro = ui.readOnlyUI(), pre = ui.isPre(pid);
     const L = U.L;
     // [route, label, group]: a project in its design / buy phase gets the DESIGN · BUY · BUILD · MORE groups (§1.2); a building one the plain list of today
-    const pre1 = [["design", L("Design", "التصميم"), "design"], ["boq", L("BOQ", "جدول الكميات"), "buy"], ["bids", L("Bids", "العطاءات"), "buy"]];
+    const pre1 = [["design", L("Design", "التصميم"), "design"], ["systems", L("Systems", "الأنظمة"), "design"], ["boq", L("BOQ", "جدول الكميات"), "buy"], ["bids", L("Bids", "العطاءات"), "buy"]];
     const build = [["balances", L("Balances", "الأرصدة")], ["audit", L("Crews", "العمالة")], ["eqaudit", L("Equipment", "المعدات")], ["invaudit", L("Invoices", "الفواتير")], ["today", L("Today", "اليوم")], ["week", L("Week", "الأسبوع")], ["project", L("Project", "المشروع")], ["timeline", L("Timeline", "الجدول الزمني")], ["ledger", L("Ledger", "الدفتر")], ["pay", L("Pay", "الدفع")]].map((x) => x.concat("build"));
-    const more = [["inbox", L("Docs", "المستندات")], ["report", L("Report", "التقرير")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")]].map((x) => x.concat("more"));
+    const more = [["inbox", L("Docs", "المستندات")], ["report", L("Report", "التقرير")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")], ["map", L("Map", "خريطة التطبيق")]].map((x) => x.concat("more"));
     const items = ro ? (pre ? [["report", L("Report", "التقرير")], ["design", L("Design", "التصميم")], ["boq", L("BOQ", "جدول الكميات")], ["bids", L("Bids", "العطاءات")]] : [["report", L("Report", "التقرير")], ["project", L("Jobs", "البنود")], ["timeline", L("Timeline", "الجدول الزمني")], ["ledger", L("Ledger", "الدفتر")]])
       : pre ? pre1.concat(build, more) : build.concat(more);
     const GRP = { design: L("Design", "التصميم"), buy: L("Buy", "الشراء"), build: L("Build", "التنفيذ"), more: L("More", "المزيد") };
@@ -6031,8 +6973,10 @@ window.SL = window.SL || {};
   };
   A.menu = () => {
     const ro = ui.readOnlyUI(), real = S().canWrite !== false, L = U.L;
-    // Design and Buy are reachable from here in every phase (§1.2); viewers get them only before the build
-    const items = [["balances", L("Balances (who owes whom)", "الأرصدة (مَن يدين لمَن)")], ["audit", L("Crews (who came, day by day)", "العمالة (مَن حضر، يوماً بيوم)")], ["eqaudit", L("Equipment (what is on site)", "المعدات (ما في الموقع)")], ["invaudit", L("Invoices (received, paid, prices)", "الفواتير (المستلمة، المدفوعة، الأسعار)")], ["today", L("Today (crews, rentals, bought today)", "اليوم (العمالة، الإيجار، مشتريات اليوم)")], ["design", L("Design (drawings, milestones)", "التصميم (المخططات، المحطات)")], ["boq", L("Buy (BOQ, bids)", "الشراء (جدول الكميات، العطاءات)")], ["report", L("Report (investor view)", "التقرير (عرض المستثمر)")], ["capital", L("Capital & sources", "رأس المال والمصادر")], ["ledger", L("Ledger (every cost)", "الدفتر (كل التكاليف)")], ["timeline", L("Timeline (Gantt)", "الجدول الزمني (مخطط)")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")]].filter(([k]) => !ro || ["report", "ledger", "timeline"].includes(k) || (ui.isPre() && (k === "design" || k === "boq")));
+    // Design and Buy are reachable from here in every phase (§1.2); viewers get them only before the build. Systems (spec part 4 §6)
+    // is listed for a project in its design / buy phase; the Map (§4.6) everywhere, viewers included
+    const items = [["balances", L("Balances (who owes whom)", "الأرصدة (مَن يدين لمَن)")], ["audit", L("Crews (who came, day by day)", "العمالة (مَن حضر، يوماً بيوم)")], ["eqaudit", L("Equipment (what is on site)", "المعدات (ما في الموقع)")], ["invaudit", L("Invoices (received, paid, prices)", "الفواتير (المستلمة، المدفوعة، الأسعار)")], ["today", L("Today (crews, rentals, bought today)", "اليوم (العمالة، الإيجار، مشتريات اليوم)")], ["design", L("Design (drawings, milestones)", "التصميم (المخططات، المحطات)")], ["systems", L("Systems (electrical, water, drainage…)", "الأنظمة (الكهرباء، المياه، الصرف…)")], ["boq", L("Buy (BOQ, bids)", "الشراء (جدول الكميات، العطاءات)")], ["report", L("Report (investor view)", "التقرير (عرض المستثمر)")], ["capital", L("Capital & sources", "رأس المال والمصادر")], ["ledger", L("Ledger (every cost)", "الدفتر (كل التكاليف)")], ["timeline", L("Timeline (Gantt)", "الجدول الزمني (مخطط)")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")], ["map", L("Map · everything Mimar does", "خريطة التطبيق · كل ما يفعله معمار")]]
+      .filter(([k]) => (k !== "systems" || ui.isPre()) && (!ro || ["report", "ledger", "timeline", "map"].includes(k) || (ui.isPre() && ["design", "systems", "boq"].includes(k))));
     const ROLE = { owner: ["owner", "مالك"], editor: ["editor", "محرر"], viewer: ["viewer", "مشاهد"] };
     ui.sheet({
       title: L("More", "المزيد"),
@@ -12514,6 +13458,8 @@ window.SL = window.SL || {};
       // drawings: one row per set; the sets still on the project doc come last (their status tap files them as a record)
       const rows = sets.map((s) => X.drawingRow(s, p, ro)).join("");
       h += `<div class="sec">${ui.sech(U.L("Drawings", "المخططات"), sets.length ? String(sets.length) : null)}${rows || `<p class="t12 muted">${U.L("Nothing filed yet. Send the drawings or the municipality papers to Claude in chat.", "لم يُحفظ شيء بعد. أرسل المخططات أو أوراق البلدية إلى Claude في المحادثة.")}</p>`}</div>`;
+      // the building's systems (spec part 4 §6): one tile under the drawings, smono · word · sheets per system, tap → #systems
+      if (SL.systems && SL.views.systems && SL._systems && SL._systems.designTile) h += SL._systems.designTile(pid);
       // facts: the land, what the papers say (drawings facts first, then the project's design facts), the municipality reference
       const facts = [], design = p.design && typeof p.design === "object" ? p.design : {}, muni = p.municipality && typeof p.municipality === "object" ? p.municipality : {};
       const plot = land.plot || p.plot || design.plot || "";
@@ -14354,6 +15300,446 @@ window.SL = window.SL || {};
         </div>
         <div class="sec v-cap-list">${ui.sech(U.L("Capital entries", "قيود رأس المال"), M.cash().filter((c) => c.type === "capital" && M.pidOf(c) === pid && c.date <= D).length || null)}${entries(pid, D, ro, lock)}</div>
       </div>`;
+    },
+  };
+})(window.SL);
+
+/* ---- 56-systems.js ---- */
+/* 56-systems.js — #systems, the first blatant screen (spec part 4 §6): the building × systems matrix, one tile per system
+ * (nine, in the fixed order S E L P W D M F X), the sheets and jobs of a system, and its predicted buy list grouped by fix
+ * (#systems.<key>); the facade options, the materials board and the exterior list (#systems.ext). Every figure comes from
+ * SL.systems (14-systems-model.js), guarded: with no model the screen renders an honest empty state. Quantities are count
+ * estimates (~), never a price, never a budget. Edits: the facade choice (a pick sheet with one button, Choose this, toast
+ * with Undo) and "Copy as checklist" (text only, no price column). Read-only viewers see the matrix, the tiles with their
+ * sheet counts and jobs, the sheets and the options with the chosen mark; no fix bursts, no buy lists, no buttons. */
+(function (SL) {
+  "use strict";
+  const U = SL.util, M = SL.model, ui = SL.ui;
+  const X = (SL._systems = SL._systems || {});
+  const S = () => SL.S;
+  const Y = () => SL.systems || null;            // the pure model; every call below checks it
+  X.ro = () => ui.readOnlyUI();
+  const ORDER = ["struct", "elec", "light", "power", "water", "drain", "mech", "fire", "ext"];
+  const FLOOR_ORDER = { roof: 0, second: 1, first: 2, ground: 3, basement: 4, site: 5 };
+  const FIVE = ["roof", "second", "first", "ground", "basement"];
+  const FIX_ORDER = ["first", "second", "final", "external", "plant"];
+  const fileId = (f) => (typeof f === "string" ? f : (f && (f.id || f.assetId)) || "");
+  const asc = (a, b) => a - b;
+  X.KEYS = () => { const y = Y(); return y && Array.isArray(y.KEYS) && y.KEYS.length ? y.KEYS.slice() : ORDER.slice(); };
+  X.MATRIX_KEYS = () => { const y = Y(); return y && Array.isArray(y.MATRIX_KEYS) && y.MATRIX_KEYS.length ? y.MATRIX_KEYS.slice() : X.KEYS().filter((k) => k !== "ext"); };
+  /** The nine systems: monogram, word and the short word of a two-line tile (docs/i18n.md § Blatant design); the model's SYSTEMS() covers any key this table lacks. */
+  X.SYS = () => ({
+    struct: { mono: "S", name: U.L("Structure & envelope", "الهيكل والغلاف"), short: U.L("Structure", "الهيكل") }, elec: { mono: "E", name: U.L("Electrical distribution", "توزيع الكهرباء"), short: U.L("Electrical", "الكهرباء") }, light: { mono: "L", name: U.L("Lighting & switches", "الإنارة والمفاتيح"), short: U.L("Lighting", "الإنارة") },
+    power: { mono: "P", name: U.L("Power & sockets", "القوى والفيش"), short: U.L("Power", "القوى") }, water: { mono: "W", name: U.L("Water supply", "تغذية المياه"), short: U.L("Water", "المياه") }, drain: { mono: "D", name: U.L("Drainage", "الصرف الصحي"), short: U.L("Drainage", "الصرف") },
+    mech: { mono: "M", name: U.L("Mechanical (AC, exhaust, lift)", "الميكانيكا (تكييف، شفط، مصعد)"), short: U.L("Mechanical", "الميكانيكا") }, fire: { mono: "F", name: U.L("Fire (Civil Defense)", "الحريق (الدفاع المدني)"), short: U.L("Fire", "الحريق") }, ext: { mono: "X", name: U.L("Exterior", "الواجهات"), short: U.L("Exterior", "الواجهات") },
+  });
+  /** {mono, name (html), plain (text for attributes), short (the one word of a two-line tile; the full name is for the heading, the matrix and the glossary)} of a system key. */
+  X.sys = (k) => {
+    const t = X.SYS()[k]; if (t) return { mono: t.mono, name: t.name, plain: t.name, short: t.short || t.name };
+    const y = Y(), m = y && y.SYSTEMS ? (y.SYSTEMS() || {})[k] : null, nm = m ? U.nm(m) || k : String(k || ""), sh = (m && U.L(m.short, m.shortAr)) || nm;
+    return { mono: (m && m.mono) || String(k || "?").charAt(0).toUpperCase(), name: U.t(nm), plain: U.esc(nm), short: U.t(sh) };
+  };
+  X.smono = (k) => `<span class="smono" aria-hidden="true">${X.sys(k).mono}</span>`;
+  /** Floor words; a "<floor>-ceiling" storage key reads "Ground · ceiling". */
+  X.FLOORS = () => ({ site: U.L("Site", "الموقع"), basement: U.L("Basement", "القبو"), ground: U.L("Ground", "الأرضي"), first: U.L("First", "الأول"), second: U.L("Second", "الثاني"), roof: U.L("Roof", "السطح") });
+  X.floor = (k, plain) => {
+    k = String(k || ""); const base = k.replace(/-ceiling$/, ""), F = X.FLOORS();
+    let lbl = F[base];
+    if (!lbl) { const y = Y(), f = y && y.FLOORS ? (y.FLOORS() || {})[base] : null, nm = f ? U.nm(f) || base : base; lbl = plain ? U.esc(nm) : U.t(nm); }
+    return /-ceiling$/.test(k) ? lbl + " · " + U.L("ceiling", "سقف") : lbl;
+  };
+  /** The buy-list fixes (docs/i18n.md: "Fix · First", never "stage"): the bare word, the group heading, the short word of a tile line. */
+  X.FIX_WORD = () => ({ first: U.L("First", "التأسيس"), second: U.L("Second", "التمديدات"), final: U.L("Final", "التشطيب"), external: U.L("External", "خارجي"), plant: U.L("Plant", "المعدات الرئيسية") });
+  X.FIX = () => { const W = X.FIX_WORD(), o = {}; for (const k of Object.keys(W)) o[k] = U.isAr() ? W[k] : "Fix · " + W[k]; return o; };
+  X.FIX_SHORT = () => ({ first: U.L("1st", "تأسيس"), second: U.L("2nd", "تمديد"), final: U.L("final", "تشطيب"), external: U.L("ext.", "خارجي"), plant: U.L("plant", "معدات") });
+  X.fixKey = (r) => { const s = String((r && r.fix) || "").toLowerCase(); return /^first|^1/.test(s) ? "first" : /^second|^2/.test(s) ? "second" : /^final|^third|^3/.test(s) ? "final" : /^ext/.test(s) ? "external" : /^plant|^equip/.test(s) ? "plant" : s; };
+  X.fix = (k) => X.FIX()[k] || (U.isAr() ? U.t(k) : "Fix · " + U.t(k));
+  X.TRADE = () => ({ electrician: U.L("electrician", "كهربائي"), plumber: U.L("plumber", "سباك"), ac: U.L("AC technician", "فني تكييف"), "ac-technician": U.L("AC technician", "فني تكييف"), mason: U.L("mason", "بنّاء"), painter: U.L("painter", "دهان"), stone: U.L("stone fitter", "مركب حجر"), "stone-fitter": U.L("stone fitter", "مركب حجر"), metal: U.L("metalworker", "حداد"), metalworker: U.L("metalworker", "حداد"), fire: U.L("fire contractor", "مقاول حريق"), "fire-contractor": U.L("fire contractor", "مقاول حريق"), landscaper: U.L("landscaper", "منسق حدائق"), "lift-contractor": U.L("lift contractor", "مقاول مصاعد") });
+  X.trade = (t) => { if (!t) return ""; const k = String(t).toLowerCase().trim().replace(/[\s_]+/g, "-"), T = X.TRADE(); if (T[k]) return T[k]; const y = Y(), m = y && y.TRADES ? (y.TRADES() || {})[k] : null; return m ? U.t(typeof m === "string" ? m : U.nm(m)) : U.t(t); };
+  X.CONF = () => ({ counted: U.L("counted on the drawing", "معدود من المخطط"), estimated: U.L("estimated", "تقديري"), guessed: U.L("a guess", "تخمين") });
+  X.conf = (c) => X.CONF()[String(c || "").toLowerCase()] || (c ? U.t(c) : "");
+  /** A quantity: whole numbers grouped, else up to 2 decimals; "~" marks the estimate (the sign keeps its side in Arabic). */
+  X.qty = (q) => { q = U.num(q); return Number.isInteger(q) ? U.mw(q) : String(Math.round(q * 100) / 100); };
+  X.qtyU = (q, unit) => (q == null || !isFinite(Number(q)) ? '<span class="unk">?</span>' : U.ltr("~" + X.qty(q) + (unit ? " " + U.unit(unit) : "")));
+  /** A per-unit price for the muted comparison (the only SAR figure on the screen). */
+  X.rate = (v) => { v = U.num(v); if (Math.abs(v) >= 100) return U.mw(v); const s = (Math.round(v * 1000) / 1000).toFixed(3); return U.ltr(s.endsWith("0") ? s.slice(0, -1) : s); };
+  X.bx = (l, v, cls) => `<span class="bx${cls ? " " + cls : ""}"><span class="bx-l">${l}</span><span class="bx-v">${v}</span></span>`;
+  X.page = (n) => U.L("p. " + n + " ↗", "ص. " + n + " ↖");
+  /** "3 of 8 drawn" (the matrix row's finding) · short "3 of 8" for the 64 px label column. */
+  X.drawnTxt = (d, N, short) => (short ? U.L(d + " of " + N, d + " من " + N) : U.L(d + " of " + N + " drawn", "مرسوم " + d + " من " + N));
+  /** The deck link for a drawings doc at a page: the signed asset opens at #page=n where the viewer supports it; the number is printed
+   *  so the sheet can be found by hand. "" without a file (the caller prints the page number then). */
+  X.deckLink = (doc, page, assetId) => {
+    const fid = assetId || (doc ? (doc.files || []).map(fileId).filter(Boolean)[0] : "");
+    if (!fid) return "";
+    return `<a class="lnk sys-pg" href="${U.esc(U.assetUrl(fid) + (page ? "#page=" + U.num(page) : ""))}" target="_blank" rel="noopener">${page ? X.page(U.num(page)) : "⤓ " + U.L("Open the deck", "افتح العرض")}</a>`;
+  };
+  /** The page links of one floor's sheets, every page on the table ("p. 21 ↗ · p. 22 ↗"); a page with no file is printed as text. */
+  X.pageLinks = (f) => {
+    const pages = (Array.isArray(f.pages) && f.pages.length ? f.pages : f.page ? [f.page] : []).slice(0, 8);
+    return pages.map((n) => X.deckLink(f.doc, n, f.assetId) || X.page(n)).join(" · ");
+  };
+  X.sheetsTxt = (n) => U.L(n + " sheet" + (n === 1 ? "" : "s"), U.plAr(n, "لوحة واحدة", "لوحتان", "لوحات", "لوحة"));
+  /** The layout facts (projects.design.layout) through the model, else straight from the doc; null when none. */
+  X.layout = (pid) => { const y = Y(); if (y && y.layout) { const l = y.layout(pid); if (l) return l; } const p = M.project(pid); return p && p.design && p.design.layout && typeof p.design.layout === "object" ? p.design.layout : null; };
+  /** The matrix, normalised: floors top-down (ceiling keys folded on their floor), cells {sheets, pages, drawingId, assetId}, drawn per floor. */
+  X.matrix = (pid) => {
+    const y = Y(), m = y && y.matrix ? y.matrix(pid) || {} : {}, raw = m.cells && typeof m.cells === "object" ? m.cells : {}, cells = {};
+    const fold = (f) => String(f || "").replace(/-ceiling$/, "");
+    for (const [k, c] of Object.entries(raw)) {
+      if (!c) continue;
+      const i = k.lastIndexOf("_"), f = fold(k.slice(0, i)), key = k.slice(i + 1), id = f + "_" + key, t = cells[id] || (cells[id] = { sheets: 0, pages: [], drawingId: "", assetId: "" });
+      t.sheets += U.num(c.sheets); t.pages = U.uniq(t.pages.concat(Array.isArray(c.pages) ? c.pages.map(U.num).filter((n) => n > 0) : [])).sort(asc); t.drawingId = t.drawingId || c.drawingId || ""; t.assetId = t.assetId || c.assetId || "";
+    }
+    let floors = U.uniq((Array.isArray(m.floors) ? m.floors : []).map((f) => fold(typeof f === "string" ? f : f && f.key)).filter(Boolean).concat(Object.keys(cells).map((k) => k.slice(0, k.lastIndexOf("_")))));
+    if (!floors.length) floors = FIVE.slice();
+    const keys = X.MATRIX_KEYS(), drawn = {};
+    // with a layout the site row only when a matrix system (not the facade's elevations) has site sheets; with no layout the model's rows stand, the fixed five plus site (§4.3)
+    const lay = X.layout(pid);
+    floors = floors.filter((f) => f !== "site" || !lay || keys.some((k) => cells[f + "_" + k] && cells[f + "_" + k].sheets > 0));
+    floors = U.sortBy(floors, (f) => String(FLOOR_ORDER[f] != null ? FLOOR_ORDER[f] : 9).padStart(2, "0") + ":" + f);
+    for (const f of floors) drawn[f] = m.drawn && m.drawn[f] != null ? U.num(m.drawn[f]) : keys.filter((k) => cells[f + "_" + k] && cells[f + "_" + k].sheets > 0).length;
+    return { floors, cells, drawn, any: Object.values(cells).some((c) => c.sheets > 0) };
+  };
+  /** Sheets of a system across the floors (site last: the facade deck's elevations live there): {n, first page, floors:[{floor, n, page, pages, doc, assetId}], doc}. */
+  X.sheets = (pid, key) => {
+    const m = X.matrix(pid), out = { n: 0, first: 0, floors: [], doc: null, assetId: "" };
+    for (const f of U.uniq(m.floors.concat(["site"]))) {
+      const c = m.cells[f + "_" + key]; if (!c || !(c.sheets > 0)) continue;
+      const doc = c.drawingId ? (S().drawings || {})[c.drawingId] : null, page = c.pages.length ? c.pages[0] : 0;
+      out.n += c.sheets; out.floors.push({ floor: f, n: c.sheets, page, pages: c.pages.slice(), doc: doc && !doc.void ? doc : null, assetId: c.assetId });
+      if (page && (!out.first || page < out.first)) out.first = page;
+      if (!out.doc && doc && !doc.void) { out.doc = doc; out.assetId = c.assetId; }
+    }
+    return out;
+  };
+  /** The jobs that build a system: jobs.systems{<key>:true} through the model (jobsFor, else jobs), else read here. */
+  X.jobs = (pid, key) => {
+    const y = Y(), r = y && y.jobsFor ? y.jobsFor(pid, key) : y && y.jobs ? y.jobs(pid, key) : null;
+    if (Array.isArray(r)) return r.filter(Boolean);
+    return (M.jobsAll ? M.jobsAll(pid) : M.jobs(pid)).filter((j) => j.systems && typeof j.systems === "object" && !!j.systems[key]);
+  };
+  /** The predicted rows of a system (the exterior list for "ext"); [] without a model. */
+  X.predict = (pid, key) => { const y = Y(); if (!y) return []; const r = key === "ext" ? (y.extPredict ? y.extPredict(pid) : y.predict ? y.predict(pid, key) : []) : y.predict ? y.predict(pid, key) : []; return Array.isArray(r) ? r.filter(Boolean) : []; };
+  /** The basis burst of a row: the model's {rule, fact, value, text, textAr} (a bare string is accepted). */
+  X.basis = (r) => { const b = r && r.basis; const s = b && typeof b === "object" ? (U.isAr() && b.textAr) || b.text || "" : (U.isAr() && r && r.basisAr) || b || ""; return s ? U.t(s) : ""; };
+  /** Items per fix of a row list ("1st 7 · 2nd 3 · final 4": a count of rows, never a sum of quantities, which would add metres to pieces). */
+  X.fixLine = (rows) => {
+    const n = {}; for (const r of rows) { const k = X.fixKey(r); n[k] = (n[k] || 0) + 1; }
+    const ks = FIX_ORDER.filter((k) => k in n).concat(Object.keys(n).filter((k) => !FIX_ORDER.includes(k)));
+    return ks.map((k) => (X.FIX_SHORT()[k] || U.t(k)) + " " + n[k]).join(" · ");
+  };
+  /** Who to ask for a missing sheet: the office that drew the newest deck ("Keel Design — …"), else the project's consultant. */
+  X.office = (pid) => {
+    const y = Y(), decks = y && y.decks ? y.decks(pid) || [] : [];
+    for (const d of decks) { const m = String((d && d.title) || "").match(/^(.+?)\s+[—–-]\s+/); if (m) return m[1].trim(); }
+    const p = M.project(pid), d = p && p.design && typeof p.design === "object" ? p.design : {};
+    return d.consultant || d.office || d.designer || "";
+  };
+  X.askTxt = (pid) => { const o = X.office(pid); return U.L("none", "لا شيء") + (o ? " · " + U.L("ask ", "اسأل ") + U.t(o) : ""); };
+
+  /** A system tile (§4.2): smono · the short word (the full name is the screen heading and the matrix's label: it would ellipsise in a 2-up tile at 375 px); Sheets n · jobs; the fixes (writers only). On #systems the whole tile navigates. */
+  X.tile = (pid, key, ro, here) => {
+    const s = X.sys(key), sh = X.sheets(pid, key), jobs = X.jobs(pid, key);
+    const jobsV = jobs.length ? jobs.map((j) => U.esc(M.jobCode(j.id))).join(U.L(", ", "، ")) : U.L("no job yet", "لا بند بعد");
+    const line2 = sh.n || jobs.length ? X.bx((sh.n ? U.L("Sheets " + sh.n, "اللوحات " + sh.n) : U.L("Drawings none", "المخططات لا شيء")) + " · " + U.L("jobs", "البنود"), jobsV)
+      : X.bx(U.L("Drawings", "المخططات"), X.askTxt(pid));
+    const rows = ro ? [] : X.predict(pid, key), lay = X.layout(pid);
+    const line3 = ro ? "" : X.bx(U.L("Fix", "ما يُشترى"), rows.length ? `<span class="num">${X.fixLine(rows)}</span>` : lay ? '<span class="zero">—</span>' : '<span class="unk">?</span>');
+    const inner = `<span class="tl sys-${U.esc(key)}">${X.smono(key)}<b>${s.short}</b></span>${line2}${line3}`;
+    if (here) return `<div class="tile sys-${U.esc(key)}" aria-current="page">${inner}</div>`;
+    const href = ui.href("systems", key);
+    return `<button type="button" class="tile sys-${U.esc(key)}" data-go="${U.esc(href)}">${inner}</button>`;
+  };
+
+  /** The building × systems matrix (§4.3): rows floors top-down, columns S E L P W D M F headed by their smono (the word as aria-label,
+   *  under the letter from 768 px); a cell with sheets is a 44 px link that opens the deck at its first page; an empty cell is – and not
+   *  tappable; the row ends with the finding "3 of 8 drawn" (in the 64 px label column on a phone, a column of its own from 768 px). */
+  X.matrixHtml = (pid) => {
+    const m = X.matrix(pid), keys = X.MATRIX_KEYS(), N = keys.length;
+    const head = `<div role="row"><span role="columnheader" class="rh rh0"></span>` + keys.map((k) => { const s = X.sys(k); return `<span role="columnheader" class="col sys-${U.esc(k)}" aria-label="${s.plain}">${X.smono(k)}<small aria-hidden="true">${s.name}</small></span>`; }).join("") + `<span role="columnheader" class="rd rd0" aria-hidden="true"></span></div>`;
+    const rows = m.floors.map((f) => {
+      const d = m.drawn[f] || 0, rowLbl = X.floor(f, true) + " · " + U.esc(X.drawnTxt(d, N));
+      return `<div role="row"><span role="rowheader" class="rh" aria-label="${rowLbl}"><b>${X.floor(f)}</b><small class="num">${X.drawnTxt(d, N, true)}</small></span>` + keys.map((k) => {
+        const c = m.cells[f + "_" + k], n = c ? c.sheets : 0;
+        if (!(n > 0)) return `<span role="cell" class="cell sys-${U.esc(k)}" aria-label="${X.floor(f, true)} · ${X.sys(k).plain} · ${U.L("no sheet", "بلا لوحة")}"><span class="zero" aria-hidden="true">–</span></span>`;
+        const doc = c.drawingId ? (S().drawings || {})[c.drawingId] : null, page = c.pages.length ? c.pages[0] : 0, fid = c.assetId || (doc ? (doc.files || []).map(fileId).filter(Boolean)[0] : "");
+        const lbl = X.floor(f, true) + " · " + X.sys(k).plain + " · " + X.sheetsTxt(n) + (page ? " · " + U.esc(U.unbidi(X.page(page))) : "");
+        const num = `<span class="num">${n}</span>`;
+        return `<span role="cell" class="cell sys-${U.esc(k)} on">${fid ? `<a href="${U.esc(U.assetUrl(fid) + (page ? "#page=" + page : ""))}" target="_blank" rel="noopener" aria-label="${lbl}">${num}</a>` : `<span aria-label="${lbl}">${num}</span>`}</span>`;
+      }).join("") + `<span role="cell" class="rd" aria-hidden="true"><span class="num">${X.drawnTxt(d, N)}</span></span></div>`;
+    }).join("");
+    return `<div class="matrix sys-matrix" role="table" aria-label="${U.L("Building × systems", "المبنى × الأنظمة")}" style="--cols:${N}">${head}${rows}</div>`;
+  };
+
+  /** The option tile (§4.4): name · 3 trait chips · Chosen ✓; the tap opens the option sheet (no link, no pick on the tile body). */
+  X.optTile = (o, chosenKey) => {
+    const on = !!chosenKey && chosenKey === o.key, traits = (U.isAr() && Array.isArray(o.traitsAr) && o.traitsAr.length ? o.traitsAr : Array.isArray(o.traits) ? o.traits : []).slice(0, 3);
+    return `<button type="button" class="tile sys-ext opt${on ? " on" : ""}" data-act="sysOption" data-opt="${U.esc(o.key)}" aria-label="${U.esc(U.nm(o))}${on ? " · " + U.L("Chosen ✓", "المختار ✓") : ""}"><span class="tl sys-ext">${X.smono("ext")}<b>${U.t(U.nm(o))}</b>${on ? `<span class="chosen">${U.L("Chosen ✓", "المختار ✓")}</span>` : ""}</span><span class="tgs sys-traits">${traits.map((t) => `<span class="tg">${U.t(t)}</span>`).join("") || `<span class="tg faint">${U.L("no traits", "بلا سمات")}</span>`}</span></button>`;
+  };
+  X.options = (pid) => { const y = Y(); const o = y && y.options ? y.options(pid) : []; return Array.isArray(o) ? o.filter((x) => x && x.key) : []; };
+  /** The chosen facade: projects.choices.facade (through the model when it answers), {option, drawingId, at, by, note} | null. */
+  X.chosen = (pid) => { const y = Y(), p = M.project(pid); let c = y && y.chosen ? y.chosen(pid) : null; if (!c || typeof c !== "object") c = p && p.choices && typeof p.choices === "object" ? p.choices.facade : null; return c && typeof c === "object" && c.option ? c : null; };
+  /** Material words: the deck's board first, then the glossary words for a share key the board lacks. */
+  X.MATS = () => ({ "riyadh-stone": U.L("Riyadh stone", "حجر رياض"), "paint-textured": U.L("textured paint", "دهان خشن"), paint: U.L("textured paint", "دهان خشن"), travertine: U.L("travertine", "ترافرتين"), "grooved-stone": U.L("grooved stone", "حجر مخدد"), louvers: U.L("louvers", "شرائح (لوفر)"), metal: U.L("metal trims", "كسوة معدنية"), glass: U.L("glass", "زجاج"), pergola: U.L("pergola", "برجولا"), planters: U.L("planters", "أحواض زراعة") });
+  /** The materials board: the model's merged board, else the newest deck's materials{}. */
+  X.board = (pid, opts) => {
+    const y = Y(); if (y && y.materials) { const b = y.materials(pid); if (b && typeof b === "object" && Object.keys(b).length) return b; }
+    const ids = U.uniq(opts.map((o) => o.drawingId).filter(Boolean));
+    for (const id of ids) { const d = (S().drawings || {})[id]; if (d && !d.void && d.materials && typeof d.materials === "object") return d.materials; }
+    return {};
+  };
+  X.matName = (board, k) => { const m = board[k]; return m && typeof m === "object" ? U.t(U.nm(m) || k) : X.MATS()[k] || U.t(k); };
+  X.pct = (v) => U.ltr(Math.round(U.num(v) * 100) + "%");
+
+  /** The buy list of a system, grouped by fix (Fix · First … Plant); writers only (the caller checks). No row amount, no total. */
+  X.buyList = (pid, key, title) => {
+    const rows = X.predict(pid, key), lay = X.layout(pid), B = SL.boq, boq = B && B.current ? B.current(pid) : null, priced = !!(boq && boq.status === "current" && B.priced && B.priced(boq));
+    const head = priced ? U.L("Predicted · compare with BOQ v" + U.esc(boq.version || 1), "متوقع · قارن مع جدول الكميات v" + U.esc(boq.version || 1)) : (title || U.L("What to buy", "ما يُشترى"));
+    const act = rows.length ? `<button type="button" class="btn sm sec" data-act="sysCopy" data-key="${U.esc(key)}">${U.L("Copy as checklist", "انسخ كقائمة تحقق")}</button>` : "";
+    let h = `<div class="sec sys-buy">${ui.sech(head, rows.length ? String(rows.length) : null, act)}`;
+    if (!rows.length) {
+      const why = key === "struct" ? U.L("Structure · in the BOQ, not here", "الهيكل · في جدول الكميات، ليس هنا") : lay ? U.L("Nothing predicted yet · the rules have no line for this system", "لا توقعات بعد · لا قاعدة لهذا النظام") : U.L("No layout yet · the deck's floor plans give the rooms", "لا توزيع بعد · مخططات الأدوار في العرض تعطي الغرف");
+      return h + `<p class="empty t12">${why}</p></div>`;
+    }
+    h += "</div>";
+    const groups = U.groupBy(rows, X.fixKey), order = FIX_ORDER.filter((k) => groups[k]).concat(Object.keys(groups).filter((k) => !FIX_ORDER.includes(k)));
+    for (const k of order) h += `<div class="sec sys-fixg">${ui.sech(X.fix(k), String(groups[k].length))}${groups[k].map((r) => X.row(pid, r, boq, priced)).join("")}</div>`;
+    return h;
+  };
+  /** One predicted row: item (ar) · ~qty unit · trade · basis · confidence; an itemId row adds the catalog line (the BOQ line or
+   *  "not in BOQ" beside a current priced BOQ; a usual / market per-unit price, muted, the only SAR figure on the screen). */
+  /** A row's item name: in Arabic the Arabic name, one <bdi> unit as U.t makes it, with every Latin product name inside it (UPVC, PPR,
+   *  LED, SEC…) kept Latin in a <span lang="en"> (docs/i18n.md); in English the English name with the Arabic beside it, muted. */
+  X.name = (r) => {
+    if (U.isAr() && r.ar) { const parts = String(r.ar).split(/([A-Za-z][A-Za-z0-9.-]*)/); return parts.length > 1 ? "<bdi>" + parts.map((p, i) => (i % 2 ? `<span lang="en">${U.esc(p)}</span>` : U.esc(p))).join("") + "</bdi>" : U.esc(r.ar); }
+    return U.t(r.item || r.itemId || "") + (r.ar ? ' <span class="muted sys-ar">' + U.t(r.ar) + "</span>" : "");
+  };
+  /** "Lift · 2" / "Lift · none": the lifts of the layout (an M line; S only gives the shaft); "?" with no layout. */
+  X.liftBx = (pid) => {
+    const y = Y(), lay = X.layout(pid), n = y && y.bases && lay ? Math.round(U.num((y.bases(pid) || {}).lift)) : 0;
+    return X.bx(n > 1 ? U.L("Lift", "المصاعد") : U.L("Lift", "المصعد"), !lay ? '<span class="unk">?</span>' : n ? `<span class="num">${n}</span>` : U.L("none", "لا شيء"));
+  };
+  X.row = (pid, r, boq, priced) => {
+    const it = r.itemId ? M.items()[r.itemId] : null, B = SL.boq;
+    const name = X.name(r);
+    const basis = X.basis(r), meta = [X.trade(r.trade), basis].filter(Boolean).join(" · ");
+    let cmp = "";
+    if (it) {
+      const parts = [U.L("catalog ", "الكتالوج ") + U.t(U.nm(it))];
+      if (priced && B) {
+        const bl = r.boq && typeof r.boq === "object" && r.boq.key ? r.boq : r.boq === "none" ? null : (B.lines ? B.lines(boq.id).find((l) => l.itemId === r.itemId) : null) || null;
+        if (bl) { const href = ui.href("boq", bl.key); parts.push(`<a class="lnk" href="${U.esc(href)}" data-go="${U.esc(href)}">${U.L("BOQ", "جدول الكميات")} · ${U.esc(bl.key)}${bl.qty != null ? " · " + U.ltr(X.qty(bl.qty) + (bl.unit || r.unit ? " " + U.unit(bl.unit || r.unit) : "")) : ""}</a>`); }
+        else parts.push(U.L("not in BOQ", "ليس في جدول الكميات"));
+      }
+      const P = SL.prices, bl = P && P.baseline ? P.baseline("item:" + r.itemId, r.unit || it.unit || "", ui.D()) : null;
+      if (bl && U.num(bl.usual) > 0) parts.push(U.L("usual ", "المعتاد ") + X.rate(bl.usual) + (r.unit ? " / " + U.esc(U.unit(r.unit)) : ""));
+      const mk = it.market && (U.num(it.market.typical) > 0 || U.num(it.market.high) > 0) && (!it.market.unit || !r.unit || it.market.unit === r.unit) ? it.market : null;
+      if (mk) parts.push(U.L("market ", "السوق ") + U.ltr("~" + X.rate(U.num(mk.typical) || (U.num(mk.low) + U.num(mk.high)) / 2)) + (r.unit ? " / " + U.esc(U.unit(r.unit)) : ""));
+      cmp = `<span class="sys-cmp t12 muted">${parts.join(" · ")}</span>`;
+    }
+    return `<div class="row nosw sys-row${cmp ? " sys-row3" : ""}"><span class="t">${name}</span><span class="a num">${X.qtyU(r.qty, r.unit)}</span><span class="f"></span><span class="m">${meta}</span><span class="w">${X.conf(r.confidence)}</span>${cmp}</div>`;
+  };
+  /** The checklist text (SL.systems.text when the model has it): item · ~qty unit · fix · basis, in the viewer's language, no price column. */
+  X.text = (rows) => {
+    const y = Y(); if (y && y.text) return String(y.text(rows) || "");
+    const W = X.FIX_WORD();
+    return rows.map((r) => { const b = r.basis && typeof r.basis === "object" ? (U.isAr() && r.basis.textAr) || r.basis.text || "" : (U.isAr() && r.basisAr) || r.basis || ""; return [(U.isAr() && r.ar) || r.item || r.itemId || "", (r.qty == null ? "?" : "~" + U.unbidi(X.qty(r.qty))) + (r.unit ? " " + U.unit(r.unit) : ""), W[X.fixKey(r)] || r.fix || "", b].filter(Boolean).join(" · "); }).join("\n");
+  };
+
+  /** The Design screen's one tile under Drawings: every system's smono · word · sheet count, "7 of 9 drawn"; the whole tile → #systems.
+   *  "" on a building project with no deck (nothing to show there). */
+  X.designTile = (pid) => {
+    const m = X.matrix(pid), keys = X.KEYS(), href = ui.href("systems"), p = M.project(pid);
+    if (!m.any && !(p && M.isPre && M.isPre(p))) return "";
+    let drawn = 0;
+    const parts = keys.map((k) => { const n = m.floors.concat(["site"]).reduce((t, f) => t + ((m.cells[f + "_" + k] || {}).sheets || 0), 0); if (n) drawn++; return `<span class="ds-sysk sys-${U.esc(k)}${n ? "" : " faint"}">${X.smono(k)}<span>${X.sys(k).name}</span><span class="num">${n || "–"}</span></span>`; }).join("");
+    return `<div class="sec ds-sys">${ui.sech(U.L("Systems", "الأنظمة"), X.drawnTxt(drawn, keys.length))}<div class="tiles one"><button type="button" class="tile" data-go="${U.esc(href)}"><span class="tl"><b>${U.L("Sheets per system", "اللوحات لكل نظام")}</b><span class="spacer"></span><span class="faint" aria-hidden="true">›</span></span><span class="ds-sysrow">${parts}</span></button></div></div>`;
+  };
+})(window.SL);
+
+/* ---- the screen (#systems, #systems.<key>, #systems.ext) and its actions ---- */
+(function (SL) {
+  "use strict";
+  const U = SL.util, M = SL.model, ui = SL.ui, A = SL.actions;
+  const X = SL._systems;
+  const S = () => SL.S;
+  const est = () => X.bx(U.L("Estimates", "تقديرات"), U.L("not a budget", "ليست ميزانية"));
+  const back = (href, label) => `<a class="lnk sys-back" href="${U.esc(href)}" data-go="${U.esc(href)}">${label}</a>`;
+
+  SL.views.systems = {
+    tab: "design",
+    blatant: true,
+    render(route, pid) {
+      const p = M.project(pid); if (!p) return "";
+      const ro = X.ro(), arg = (route.args || [])[0] || "", keys = X.KEYS(), y = SL.systems;
+      const hrow = (title, right) => `<div class="hrow"><h2 class="t20">${title}</h2><span class="spacer"></span>${right || ""}</div>`;
+      let h = '<div class="v-systems">';
+      if (!arg) {
+        // the overview: the matrix, the two bursts once (plus the layout's counts), nine two-line tiles 2-up
+        const m = X.matrix(pid), lay = X.layout(pid);
+        h += hrow(U.L("Systems", "الأنظمة"));
+        h += `<div class="sec">${X.matrixHtml(pid)}${m.any ? "" : `<p class="empty t12">${U.L("No systems yet · Send the MEP deck to Claude in chat", "لا أنظمة بعد · أرسل مخططات الخدمات إلى Claude في المحادثة")} <a class="lnk" href="${U.esc(ui.href("design"))}" data-go="${U.esc(ui.href("design"))}">${U.L("Design ›", "التصميم ›")}</a></p>`}</div>`;
+        const t = lay && lay.totals && typeof lay.totals === "object" ? lay.totals : null, tilde = (n) => (lay && lay.est ? U.ltr("~" + X.qty(n)) : X.qty(n));
+        h += `<div class="bxs">${est()}${X.bx(U.L("Finishes", "التشطيبات"), U.L("in the BOQ, not here", "في جدول الكميات، ليست هنا"))}` +
+          (t ? (U.num(t.units) ? X.bx(U.L("Units", "الوحدات"), `<span class="num">${tilde(t.units)}</span>`) : "") + (U.num(t.bedrooms) ? X.bx(U.L("Bedrooms", "غرف النوم"), `<span class="num">${tilde(t.bedrooms)}</span>`) : "") + (U.num(t.wetRooms) ? X.bx(U.L("Wet rooms", "الغرف الرطبة"), `<span class="num">${tilde(t.wetRooms)}</span>`) : "") + (U.num(t.parkingBays) ? X.bx(U.L("Parking bays", "المواقف"), `<span class="num">${tilde(t.parkingBays)}</span>`) : "") : "") + "</div>";
+        h += `<div class="tiles sys-tiles">${keys.map((k) => X.tile(pid, k, ro)).join("")}</div>`;
+        if (!y) h += `<p class="empty t12">${U.L("The systems model is missing · nothing is predicted", "نموذج الأنظمة غير موجود · لا توقعات")}</p>`;
+        return h + "</div>";
+      }
+      if (arg === "ext") return h + hrow(U.L("Facade", "الواجهة"), back(ui.href("systems"), U.L("‹ Systems", "‹ الأنظمة"))) + X.extPage(pid, ro) + "</div>";
+      if (!keys.includes(arg)) return h + hrow(U.L("Systems", "الأنظمة"), back(ui.href("systems"), U.L("‹ Systems", "‹ الأنظمة"))) + `<div class="sec"><p class="empty t12">${U.L("No such system · pick one below", "لا نظام بهذا الاسم · اختر واحداً أدناه")}</p><div class="tiles sys-tiles">${keys.map((k) => X.tile(pid, k, ro)).join("")}</div></div></div>`;
+      // one system: the tile, its sheets per floor (every page a link), its jobs, then (writers) what to buy
+      const sh = X.sheets(pid, arg), jobs = X.jobs(pid, arg);
+      h += hrow(X.sys(arg).name, back(ui.href("systems"), U.L("‹ Systems", "‹ الأنظمة")));
+      h += `<div class="sec"><div class="tiles one">${X.tile(pid, arg, ro, true)}</div></div>`;
+      // what the layout alone gives (§6 sources): M adds the lifts ("Lift · 2" / "Lift · none"), E its low-current fix, never drawn
+      const fromLayout = arg === "mech" ? X.liftBx(pid) : arg === "elec" ? X.bx(U.L("Low current", "التيار الخفيف"), U.L("not drawn", "غير مرسوم")) : "";
+      h += `<div class="sec">${ui.sech(U.L("Sheets", "اللوحات"), sh.n ? String(sh.n) : null)}<div class="bxs">${sh.floors.length ? sh.floors.map((f) => { const links = X.pageLinks(f); return X.bx(X.floor(f.floor), `<span class="num">${f.n}</span>${links ? " · " + links : ""}`); }).join("") : X.bx(U.L("Drawings", "المخططات"), X.askTxt(pid))}${fromLayout}</div></div>`;
+      h += `<div class="sec">${ui.sech(U.L("Jobs", "البنود"), jobs.length ? String(jobs.length) : null)}<div class="bxs">${jobs.length ? jobs.map((j) => X.bx(U.esc(M.jobCode(j.id)), `<a class="lnk" href="${U.esc(ui.href("job", j.id))}" data-go="${U.esc(ui.href("job", j.id))}">${U.t(U.nm(j))}</a>`)).join("") : X.bx(U.L("Job", "البند"), U.L("no job yet", "لا بند بعد"))}</div></div>`;
+      if (!ro) { h += `<div class="bxs">${est()}</div>`; h += X.buyList(pid, arg); }
+      return h + "</div>";
+    },
+  };
+
+  /** #systems.ext: the options (2-up tiles, all seven in view, tap → the option sheet), the materials board as bursts, the chosen
+   *  option (or the empty state "No option chosen · Choose one"), then the exterior rows (writers only). */
+  X.extPage = (pid, ro) => {
+    const opts = X.options(pid), ch = X.chosen(pid), cur = ch ? opts.find((o) => o.key === ch.option) : null, board = X.board(pid, opts);
+    let h = `<div class="sec">`;
+    if (!opts.length) h += `<div class="tiles"><div class="tile sys-ext"><span class="tl sys-ext">${X.smono("ext")}<b>${X.sys("ext").name}</b></span>${X.bx(U.L("Options", "الخيارات"), U.L("none yet", "لا شيء بعد"))}</div></div><p class="empty t12">${U.L("No facade options yet · Send the concept deck to Claude in chat", "لا خيارات واجهة بعد · أرسل عرض التصميم إلى Claude في المحادثة")}</p>`;
+    else h += `<div class="tiles sys-opts" role="list" aria-label="${U.L("Exterior options", "خيارات الواجهة")}">${opts.map((o) => X.optTile(o, ch && ch.option)).join("")}</div>`;
+    h += "</div>";
+    // the materials board: name · use · unit, with the chosen option's share of the facade
+    const shares = cur && cur.materials && typeof cur.materials === "object" ? cur.materials : {};
+    const mats = U.uniq(Object.keys(board).concat(Object.keys(shares))).filter((k) => board[k] || U.num(shares[k]) > 0);
+    if (mats.length) h += `<div class="sec">${ui.sech(U.L("Materials", "المواد"), String(mats.length))}<div class="bxs sys-mats">${mats.map((k) => { const m = board[k] && typeof board[k] === "object" ? board[k] : null; const v = [m && (m.use || m.useAr) ? U.t((U.isAr() && m.useAr) || m.use || m.useAr) : "", m && m.unit ? U.esc(U.unit(m.unit)) : "", U.num(shares[k]) > 0 ? U.L("share of the facade ", "نسبة من الواجهة ") + X.pct(shares[k]) : ""].filter(Boolean).join(" · "); return X.bx(X.matName(board, k), v || '<span class="zero">–</span>'); }).join("")}</div></div>`;
+    // the chosen option, or the empty state right above the rows common to every option
+    h += `<div class="bxs">${cur ? X.bx(U.L("Chosen", "المختار"), U.t(U.nm(cur)) + (ch.at ? ` <small class="muted">${U.L("chosen on ", "اختير في ")}${U.esc(U.dDM(ch.at))}</small>` : "")) : X.bx(U.L("No option chosen", "لم يُختر خيار"), U.L("Choose one", "اختر واحداً"), "sys-empty")}${ro ? "" : est()}</div>`;
+    if (!ro) h += X.buyList(pid, "ext", U.L("What to buy", "ما يُشترى"));
+    return h;
+  };
+
+  /** The facade choice: patch projects.choices.facade, toast with Undo (the previous value, or null). Returns the store result. */
+  X.choose = async (pid, o) => {
+    if (X.ro()) return { ok: false, code: "read_only" };
+    const p = M.project(pid); if (!p || !o) return { ok: false, code: "missing" };
+    const prev = p.choices && typeof p.choices === "object" && p.choices.facade && typeof p.choices.facade === "object" ? U.clone(p.choices.facade) : null;
+    const r = await SL.store.patch("projects", pid, { choices: { facade: { option: o.key, drawingId: o.drawingId || "", at: U.today(), by: "app", note: "" } } });
+    if (!r || !r.ok) { ui.toast(U.esc(SL.store.errText(r))); return r; }
+    ui.toast(U.L("Chosen ✓ ", "المختار ✓ ") + U.t(U.nm(o)), { undo: () => SL.store.patch("projects", pid, { choices: { facade: prev } }) });
+    return r;
+  };
+  const optionOf = (d) => { const pid = ui.pid(), o = X.options(pid).find((x) => x.key === (d && d.opt)); if (!o) ui.toast(U.L("Option not found", "الخيار غير موجود")); return o; };
+  /** The option sheet (§4.4, a pick sheet): name, traits, the material shares as bursts, the views, "p. 8 ↗"; for a writer one footer
+   *  button, Choose this, which commits, toasts with Undo and closes. A viewer (or the chosen option) gets the sheet with no footer. */
+  A.sysOption = (d) => {
+    const pid = ui.pid(), o = optionOf(d); if (!o) return;
+    const ro = X.ro(), ch = X.chosen(pid), on = !!(ch && ch.option === o.key), board = X.board(pid, X.options(pid)), doc = o.drawingId ? (S().drawings || {})[o.drawingId] : null;
+    const traits = (U.isAr() && Array.isArray(o.traitsAr) && o.traitsAr.length ? o.traitsAr : Array.isArray(o.traits) ? o.traits : []);
+    const shares = o.materials && typeof o.materials === "object" ? Object.entries(o.materials).filter(([, v]) => U.num(v) > 0).sort((a, b) => U.num(b[1]) - U.num(a[1])) : [];
+    const pages = Array.isArray(o.pages) ? o.pages.map(U.num).filter((n) => n > 0) : [];
+    ui.sheet({
+      title: U.t(U.nm(o)) + (on ? " · " + U.L("Chosen ✓", "المختار ✓") : ""), state: {},
+      body: () => `<div class="bxs sys-sheet">${traits.length ? X.bx(U.L("Traits", "السمات"), `<span class="tgs">${traits.map((t) => `<span class="tg">${U.t(t)}</span>`).join("")}</span>`) : ""}${shares.map(([k, v]) => X.bx(X.matName(board, k), `<span class="num">${X.pct(v)}</span>`)).join("")}${Array.isArray(o.views) && o.views.length ? X.bx(U.L("Views", "اللقطات"), U.t(o.views.join(" · "))) : ""}${pages.length ? X.bx(U.L("Deck", "العرض"), pages.map((n) => X.deckLink(doc, n, o.assetId) || X.page(n)).join(" · ")) : ""}${on && ch.at ? X.bx(U.L("Chosen on", "اختير في"), U.esc(U.dDM(ch.at))) : ""}</div>`,
+      foot: () => (ro || on ? "" : `<button class="btn" data-act="choose">${U.L("Choose this", "اختر هذا")}</button>`),
+      acts: { choose: async (ds, el, ev, sh) => { if (X.ro()) return; sh.busy(true); const r = await X.choose(pid, o); sh.busy(false); if (!r || !r.ok) return sh.error(SL.store.errText(r)); sh.close(true); } },
+    });
+  };
+  /** Copy as checklist: the rows as text (item · ~qty unit · fix · basis, no price column), a Copy button with the select-and-copy fallback. */
+  A.sysCopy = (d) => {
+    if (X.ro()) return;
+    const pid = ui.pid(), key = d && d.key; if (!key) return;
+    const rows = X.predict(pid, key); if (!rows.length) { ui.toast(U.L("Nothing to copy", "لا شيء للنسخ")); return; }
+    const text = X.text(rows);
+    ui.sheet({
+      title: U.L("Copy as checklist", "انسخ كقائمة تحقق") + " · " + X.sys(key).name, state: {},
+      body: () => `<p class="t13">${U.L("Estimates · not a budget · no prices", "تقديرات · ليست ميزانية · بلا أسعار")}</p><label for="sys-txt" class="lbl">${U.L("Checklist", "قائمة التحقق")}</label><textarea id="sys-txt" class="inp sys-txt" readonly rows="10" dir="auto">${U.esc(text)}</textarea>`,
+      foot: () => `<button class="btn" data-act="copy">${U.L("Copy", "نسخ")}</button>`,
+      acts: { copy: async (ds, el, ev, sh) => { try { await navigator.clipboard.writeText(text); ui.toast(U.L("Copied", "تم النسخ")); } catch (e) { const t = sh.el.querySelector("#sys-txt"); if (t) { t.focus(); t.select(); } sh.error(U.L("Select the text and copy it.", "حدد النص وانسخه.")); } } },
+    });
+  };
+})(window.SL);
+
+/* ---- 57-map.js ---- */
+/* 57-map.js — #map: the feature map (spec part 4 §4.6, §5). Every screen and global action of Mimar, once, in five groups
+ * (Design · Buy · Build · Handover · Always) from SL.features (16-features.js), all on one screen with nothing to expand.
+ * The map itself is the first section (drawn first, §1 rule 2); its labels are the nodes. The screen the position strip
+ * was tapped from is marked "● here" and scrolled into view (#map.<node-id>). A node this project does not use (a float
+ * screen on a project paid direct, the crew screens before the build) is muted "not on this project", a coming one
+ * "Coming · phase 3" and not tappable, and for a viewer a screen outside RO_OK is muted "view only" and the action nodes
+ * are left out — never hidden otherwise, so the map keeps one shape everywhere. */
+(function (SL) {
+  "use strict";
+  const U = SL.util, M = SL.model, ui = SL.ui;
+  const X = (SL._map = SL._map || {});
+
+  /** "Coming · phase 2" in the viewer's language (the phase number stays a figure). */
+  X.coming = (ph) => U.L("Coming · " + ph, "قادم · " + (ph === "phase 2" ? "المرحلة 2" : "المرحلة 3"));
+  /** How a node stands on this project: {off, word (HTML), tap} — live, muted with its word, or muted and not tappable. */
+  X.state = (n, ctx) => {
+    if (n.planned) return { off: true, word: X.coming(n.planned), tap: false };
+    const main = n.routes[0] || "";
+    if (!n.act && !SL.views[main]) return { off: true, word: U.L("Coming", "قادم"), tap: false }; // registered ahead of its screen
+    if (ctx.ro && !n.act && !ui.RO_OK.has(main)) return { off: true, word: U.L("view only", "عرض فقط"), tap: false };
+    if (n.applies && !n.applies(ctx.pid)) return { off: true, word: U.L("not on this project", "ليس في هذا المشروع"), tap: true };
+    return { off: false, word: "", tap: true };
+  };
+  const HERE = () => "● " + U.L("here", "هنا");
+  /** One "opens ›" line under a tile: Job, Crew week, Float… (an argument screen is never a node of its own). */
+  X.opensLine = (o, n, ctx) => {
+    const here = ctx.here.node === n && ctx.here.open === o;
+    const off = !here && o.applies && !o.applies(ctx.pid);
+    const word = here ? ' · <b class="node-w">' + HERE() + "</b>" : off ? ' · <span class="faint">' + U.L("not on this project", "ليس في هذا المشروع") + "</span>" : "";
+    return `<span class="node-o${here ? " here" : ""}${off ? " off" : ""}"><span class="faint">${U.L("opens ›", "يفتح ›")}</span> <b>${U.L(o.name, o.ar)}</b>${word}</span>`;
+  };
+  /** One "Coming · phase 2 › People" line: what the node gains later, muted. */
+  X.comingLine = (c) => `<span class="node-o off"><span class="faint">${X.coming(c.planned)} ›</span> <b>${U.L(c.name, c.ar)}</b></span>`;
+  /** A node as a tile: name · burst · its opens lines · its coming lines · the route token · the word (● here / not on this project / Coming). */
+  X.tile = (n, ctx) => {
+    const st = X.state(n, ctx), here = ctx.here.node === n && !ctx.here.open, hereIn = ctx.here.node === n && !!ctx.here.open;
+    if (ctx.ro && n.act) return ""; // a viewer has no (+) and no writer's menu (part 1 §2.4)
+    const main = n.routes[0] || "", go = n.act ? "" : ui.href(main, n.arg || "");
+    const cls = "tile node" + (here || hereIn ? " here" : "") + (st.off ? " off" : "");
+    const token = n.act ? (n.act === "add" ? "(+)" : "⋯") : "#" + main + (n.arg ? "." + n.arg : "");
+    const word = here ? HERE() : st.word;
+    const inner = `<span class="tl"><b class="node-n">${U.L(n.name, n.ar)}</b></span><span class="node-b">${U.L(n.burst, n.burstAr)}</span>` +
+      (n.opens || []).map((o) => X.opensLine(o, n, ctx)).join("") +
+      (n.coming || []).map(X.comingLine).join("") +
+      `<span class="node-f"><span class="node-r" dir="ltr" lang="en">${U.esc(token)}</span>${word ? `<span class="node-w">${word}</span>` : ""}</span>`; // the route token is a code: Latin in both languages
+    if (n.act) return st.tap ? `<button type="button" class="${cls}" data-act="${U.esc(n.act)}">${inner}</button>` : `<div class="${cls}">${inner}</div>`;
+    if (!st.tap) return `<div class="${cls}">${inner}</div>`;
+    return `<a class="${cls}" href="${U.esc(go)}" data-go="${U.esc(go)}">${inner}</a>`;
+  };
+
+  SL.views.map = {
+    tab: "map",
+    blatant: true,
+    render(route, pid) {
+      const F = SL.features; if (!F || !F.list) return "";
+      const p = M.project(pid), ro = ui.readOnlyUI(), nodes = F.list(pid);
+      // the node to mark: the one the strip was tapped from (#map.<id>), else this screen — resolved against the list drawn
+      // here (F.byId builds its own list, so the tiles compare by identity against these objects)
+      const h0 = F.byId(route.args[0] || "map", pid);
+      const hereNode = nodes.find((n) => n.id === (h0.node ? h0.node.id : "map")) || null;
+      const hereOpen = h0.open && hereNode ? (hereNode.opens || []).find((o) => o.route === h0.open.route) || null : null;
+      const ctx = { pid, ro, here: { node: hereNode, open: hereOpen } };
+      const shown = nodes.filter((n) => !(ro && n.act));
+      let h = `<div class="v-map"><div class="hrow"><h2 class="t20">${U.L("Map", "خريطة التطبيق")}</h2><span class="spacer"></span>${p ? ui.phasePill(p) : ""}</div>`;
+      // the map is the first section: five groups, each headed by its word and its count, nothing else before it
+      h += `<div class="sec map" aria-label="${U.L("Everything Mimar does", "كل ما يفعله معمار")}">`;
+      for (const g of F.GROUPS) {
+        const ns = shown.filter((n) => n.group === g);
+        if (!ns.length) continue;
+        h += `<div class="map-g">${ui.sech(F.groupName(g), String(ns.length))}<div class="map-nodes">${ns.map((n) => X.tile(n, ctx)).join("")}</div></div>`;
+      }
+      return h + "</div></div>";
+    },
+    // opened from the strip: bring the marked node into view once the router's scroll-to-top has run (no smooth scrolling: nothing animates on navigation)
+    after(el, route) {
+      if (!route.args[0]) return;
+      const here = el.querySelector(".node.here");
+      if (here && here.scrollIntoView) setTimeout(() => { try { here.scrollIntoView({ block: "center" }); } catch (e) {} }, 0);
     },
   };
 })(window.SL);
