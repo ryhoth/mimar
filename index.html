@@ -3744,11 +3744,12 @@ window.SL = window.SL || {};
     const holds = topups - returns + adjust - spent;
     return { wid, topups, returns, adjust, given: topups - returns, spent, spentProject, pays, holds, owedVia, owedViaProject, left: holds - owedVia, firstTopup };
   });
-  /** Who handed a top-up over: its `via` (cash an investor gave the holder for Ryan, e.g. "Hashem Restaurants"), by the
-   *  name of the wallet that holder keeps (its Arabic in Arabic), else Ryan. */
+  /** Who handed a top-up over: its `via` (cash someone else gave the holder, e.g. "Hashem Restaurants", "Sami"), in
+   *  Arabic its `viaAr` when set, else the Arabic name of the wallet that holder keeps, else Ryan. */
   M.topupFrom = (c) => {
     const v = String((c && c.via) || "").trim();
     if (!v) return M.walletName(M.ownerWalletId());
+    if (U.isAr() && c.viaAr) return String(c.viaAr).trim();
     const w = Object.values(S().wallets || {}).find((x) => x && x.holder === v);
     return (w && U.isAr() && w.holderAr) || v;
   };
