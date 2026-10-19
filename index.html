@@ -19187,12 +19187,12 @@ window.SL = window.SL || {};
    *  none: إيجار معدات); in Arabic a name with no Arabic gives way to its tags, else its kind; a deposit: the rental
    *  shop; a count's own correction: فرق جرد. fx: the wallet's count corrections. */
   X.sWho = (u, fx) => {
-    if (!u) return { name: U.L("Payment", "دفعة"), tag: "" };
+    if (!u) return { name: U.L("Payment", "دفعة"), tag: "", generic: true };
     if (u.kind === "crew") return { name: u.title, tag: U.L("week of ", "أسبوع ") + X.sDay(u.weekStart) };
     if (u.deposit) { const s = plain(u.shop); return { name: s && (!U.isAr() || U.hasAr(s)) ? s : U.L("rental shop", "محل التأجير"), tag: U.L("deposit", "تأمين") }; }
     if (isFix(fx || new Set(), "costs", u.id, u.doc.desc)) return { name: X.sFix(), tag: "" };
     const name = plain(X.supName ? X.supName(u) : u.payee), tag = X.sJoin(M.forTags(u).slice(0, 2));
-    if (U.isAr() && !U.hasAr(name)) return { name: tag || kindName(u), tag: "" };
+    if (U.isAr() && !U.hasAr(name)) return { name: tag || kindName(u), tag: "", generic: true }; // generic: a stand-in, not a name
     return { name, tag: tag || (u.kind === "rental" ? kindName(u) : "") };
   };
 
@@ -19216,7 +19216,7 @@ window.SL = window.SL || {};
         (f.h > 0 ? got : back).push(row);
       } else {
         const u = M.unit(f.unitKey), who = X.sWho(u, fx);
-        row.name = who.name;
+        row.name = who.name; row.uk = f.unitKey; row.generic = !!who.generic;
         if (f.refund) { row.tag = u && u.deposit ? U.L("deposit back", "رجّع التأمين") : U.L("money back", "رجّع مبلغ"); got.push(row); }
         else { row.tag = who.tag; spent[GROUP[u ? u.cat : "O"] || "O"].push(row); }
       }
@@ -19229,12 +19229,69 @@ window.SL = window.SL || {};
       X.SG.some((g) => sum(spent[g.k]) !== U.sum(g.cats, (c) => r.paidCat[c]))) M.idFail("sayedPdf:" + wid, d);
     return d;
   };
+
+  /* ---- what a supplier provided, in one word (Ryan, 19 Oct: "a one-word tag, 'Paint' or something"; for several things
+   * one word that takes them all in, or the gist, the thing that is about 80% of the money) ---- */
+  /** One word per kind of thing [en, ar]: the item catalog's categories, the service types, and a few more. */
+  const W = {
+    tiles: ["Tiles", "بلاط"], steel: ["Steel", "حديد"], fixings: ["Screws", "براغي"], blocks: ["Blocks", "بلك"], plaster: ["Plaster", "لياسة"], gypsum: ["Gypsum", "جبس"],
+    cement: ["Cement", "أسمنت"], sand: ["Sand", "رمل"], aggregate: ["Gravel", "بحص"], earth: ["Fill", "دفان"], concrete: ["Concrete", "خرسانة"],
+    plumbing: ["Plumbing", "سباكة"], electrical: ["Electrical", "كهرباء"], paint: ["Paint", "دهان"], sealant: ["Silicone", "سيليكون"], tools: ["Tools", "عدد"], safety: ["Safety", "سلامة"],
+    disposal: ["Skips", "حاويات"], transport: ["Transport", "نقل"], cleaning: ["Cleaning", "تنظيف"], water: ["Water", "مياه"], security: ["Guard", "حراسة"],
+    doors: ["Doors", "أبواب"], food: ["Food", "أكل"], rental: ["Rental", "إيجار"], deposit: ["Deposit", "تأمين"],
+  };
+  /** One word for kinds that go together [en, ar, kinds] (cement, sand and gravel → building materials). */
+  const GROUPS = [["Masonry", "بناء", ["cement", "sand", "aggregate", "earth", "blocks", "concrete"]], ["Plaster", "لياسة", ["plaster", "gypsum"]],
+    ["Steel", "حديد", ["steel", "fixings"]], ["MEP", "تمديدات", ["plumbing", "electrical"]], ["Paint", "دهان", ["paint", "sealant"]]];
+  /** A line with no catalog item: its kind from its words (English or Arabic), first match wins. */
+  const KW = [
+    [/concrete|خرسان/i, "concrete"], [/\bdoors?\b|أبواب|باب|alumin|ألمنيوم|المنيوم/i, "doors"],
+    [/\bwc\b|toilet|basin|mixer|heater|sink|valve|siphon|shower|faucet|drain|pipe|elbow|مغسل|كرسي|خلاط|سخان|محبس|سيفون|دش|صفاي|ماسور|بايب|كوع/i, "plumbing"],
+    [/cable|wire|conduit|socket|switch|breaker|كيبل|سلك|أفياش|كهرب/i, "electrical"],
+    [/paint|thinner|primer|دهان|بوي|تنر|أساس/i, "paint"], [/silicon|سيليكون|سليكون/i, "sealant"],
+    [/cement|سمنت/i, "cement"], [/sand|رمل/i, "sand"], [/gravel|aggregate|بحص|حصى|زيرو/i, "aggregate"], [/\bfill\b|دفان/i, "earth"],
+    [/block|بلك/i, "blocks"], [/tile|ceramic|porcelain|بلاط|سيراميك|بورسلان/i, "tiles"], [/gypsum|جبس/i, "gypsum"], [/plaster|تخشين|لياس/i, "plaster"],
+    [/shinko|شينكو|steel|iron|rebar|angle|حديد|زاوية|سيخ/i, "steel"], [/screw|bolt|anchor|براغي|مسامير|خابور/i, "fixings"],
+    [/food|lunch|dinner|meal|أكل|غداء|عشاء|وجب/i, "food"], [/transport|truck|lorry|نقل|سطحة/i, "transport"], [/bobcat|بوبكات|clean|تنظيف/i, "cleaning"],
+    [/skip|container|debris|حاوي|مخلفات|أنقاض/i, "disposal"],
+  ];
+  const textKind = (t) => { for (const [re, k] of KW) if (re.test(t)) return k; return ""; };
+  /** A line's kind: its catalog item's category, else its words. */
+  const lineKind = (l) => {
+    const it = (l.itemId && M.items()[l.itemId]) || null;
+    if (it && W[it.category]) return it.category;
+    return textKind([l.desc, l.ar, it && it.name, it && it.ar].filter(Boolean).join(" "));
+  };
+  /** The one word for what units us (one supplier's, or one line's) were for, by money: a kind with ≥ 80% of it, else
+   *  a group of kinds with ≥ 80%, else the biggest kind (when what is known is at least half the money); "" when
+   *  nothing says (crews have none: their name is their trade; a placeholder's money isn't explained yet). A service
+   *  is its type (transport, skips, cleaning…), whatever its lines mention. In the viewer's language. */
+  X.sGist = (us) => {
+    const w = new Map();
+    let all = 0;
+    const put = (k, h) => { if (!(h > 0)) return; all += h; if (k) w.set(k, (w.get(k) || 0) + h); };
+    for (const u of us || []) {
+      if (!u || u.kind === "crew") continue;
+      if (u.kind === "rental") { put(u.deposit ? "deposit" : "rental", 1); continue; }
+      const c = u.doc || {};
+      if (c.placeholder) { put("", Math.abs(u.h || U.hal(c.amount)) || 1); continue; } // money not explained yet: no word
+      if (u.kind === "service" && W[c.sub]) { put(c.sub, Math.abs(u.h || U.hal(c.amount)) || 1); continue; } // its type says it
+      let sum = 0;
+      for (const l of c.lines || []) { if (!l) continue; const h = Math.abs(U.hal(l.amount) || U.hal(U.num(l.qty) * U.num(l.unitPrice))); sum += h; put(lineKind(l), h); }
+      if (!sum) put(textKind([c.desc, c.ar].filter(Boolean).join(" ")), Math.abs(u.h || U.hal(c.amount)) || 1);
+    }
+    if (!w.size) return "";
+    const top = [...w.entries()].sort((a, b) => b[1] - a[1]), word = (k) => U.L(W[k][0], W[k][1]);
+    if (top[0][1] >= 0.8 * all) return word(top[0][0]);
+    for (const [en, ar, ks] of GROUPS) if (U.sum(ks, (k) => w.get(k) || 0) >= 0.8 * all) return U.L(en, ar);
+    return U.sum(top, (e) => e[1]) >= 0.5 * all ? word(top[0][0]) : "";
+  };
 })(window.SL);
 
-/* ---- chunk 2: the story in five coloured blocks (X.sBlocks: what they say; X.sPage1: drawn) ---- */
+/* ---- chunk 2: the page: the T table (X.sT, X.sTable), the blocks under it (X.sBlocks, X.sBlock), X.sPage1 ---- */
 (function (SL) {
   "use strict";
-  const U = SL.util;
+  const U = SL.util, M = SL.model;
   const X = SL._pdf, C = X.C;
   /** Soft fills with dark text of the same hue (prints well; no gradients). */
   const K = (X.SK = {
@@ -19358,14 +19415,20 @@ window.SL = window.SL || {};
   /** The T table for d (Ryan, 19 Oct: "one side in and one side out"). The reading side: every line of money in, oldest
    *  first (from Ryan by day, other money in, money back). The other side: money out per kind (crews · invoices and
    *  materials · equipment · other, the kinds with money in them) with its total, then who got it (summed per name,
-   *  biggest first), then what he gave back or let out of the float. → {in: [{day, label, h}], out: [{label, h, head,
-   *  day}], inTotal, outTotal}; the sides add up to the receipt (X.sayedData checks the lines against it). */
+   *  biggest first, each with a one-word tag for what it provided: X.sGist), then what he gave back or let out of the
+   *  float. → {in: [{day, label, h}], out: [{label, h, head, day, word}], inTotal, outTotal}; the sides add up to the
+   *  receipt (X.sayedData checks the lines against it). */
   X.sT = (d) => {
     const r = d.r, lbl = (x) => x.name + (x.tag ? " · " + x.tag : "");
+    // a line per name (a stand-in name, such as the kind of a cost with no supplier, per name and word), and the one word
+    // for what that name provided (X.sGist over its units)
     const per = (rows) => {
       const m = new Map();
-      for (const x of rows) { const k = x.name || x.tag || U.L("Payment", "دفعة"), e = m.get(k); if (e) e.h += x.h; else m.set(k, { label: k, h: x.h }); }
-      return [...m.values()].sort((a, b) => b.h - a.h);
+      for (const x of rows) {
+        const u = x.uk ? M.unit(x.uk) : null, label = x.name || x.tag || U.L("Payment", "دفعة"), k = x.generic ? label + "|" + X.sGist([u]) : label, e = m.get(k);
+        if (e) { e.h += x.h; if (u) e.us.push(u); } else m.set(k, { label, h: x.h, us: u ? [u] : [] });
+      }
+      return [...m.values()].map((e) => { const w = X.sGist(e.us); return { label: e.label, h: e.h, word: w && w !== e.label ? w : "" }; }).sort((a, b) => b.h - a.h); // a name that is the word already: no tag
     };
     const out = [];
     for (const g of X.SG) {
@@ -19380,7 +19443,7 @@ window.SL = window.SL || {};
   };
 
   // T table metrics (pt, before X.onePage's scale): header · row · totals row · text · header text · cell padding · stem gap
-  const TH = 36, TR = 27, TT = 34, TF = 17, THF = 20, TP = 8, TG = 12;
+  const TH = 34, TR = 25, TT = 32, TF = 17, THF = 20, TP = 8, TG = 12;
   /** Draws t (X.sT) at y; returns its height. Each side's figures are right-aligned (ones under ones) at its far end. */
   X.sTable = (pg, y, t) => {
     const cw = (X.CW - TG) / 2, n = Math.max(1, t.in.length, t.out.length), body = TH + n * TR, h = body + TT;
@@ -19392,6 +19455,8 @@ window.SL = window.SL || {};
       const dec = X.sDec(s.rows.map((r) => r.h).concat([s.total]));
       const aw = Math.max(...s.rows.map((r) => X.width(pg, X.sn(r.h, dec), { size: TF, weight: r.head ? 700 : 600, num: true })), X.width(pg, X.sn(s.total, dec), { size: TF + 1, weight: 700, num: true }));
       const pl = X.px(pg, s.x, cw), R = pg.rtl ? pl + TP + aw : pl + cw - TP, room = cw - 2 * TP - aw - 10;
+      // the one-word tags line up in a column of their own, before the names
+      const ww = Math.max(0, ...s.rows.map((r) => (r.word ? X.width(pg, r.word, { size: TF - 3, weight: 700 }) : 0))), chip = ww ? ww + 10 : 0;
       X.rrect(pg, s.x, y, cw, TH, 8, s.k.bg, s.k.edge);
       X.text(pg, s.title, s.x + TP, y + TH / 2 + THF * 0.36, { size: THF, weight: 700, color: s.k.ink, maxW: cw - 2 * TP });
       s.rows.forEach((r, i) => {
@@ -19399,6 +19464,10 @@ window.SL = window.SL || {};
         if (r.head) X.rect(pg, s.x, ry + 1, cw, TR - 2, s.k.bg);
         let x = s.x + TP + (r.head ? 0 : 4), w = room - (r.head ? 0 : 4);
         if (r.day) { const dw = X.text(pg, r.day, x, by, { size: TF - 2, color: C.ink2, num: true }) + 8; x += dw; w -= dw; }
+        if (chip && !r.head) {
+          if (r.word) { X.rrect(pg, x, ry + 5, chip, TR - 10, 4, "#F0EFE9"); X.text(pg, r.word, x + chip / 2, ry + TR / 2 + (TF - 3) * 0.36, { size: TF - 3, weight: 700, color: C.ink2, align: "center" }); }
+          x += chip + 6; w -= chip + 6;
+        }
         X.text(pg, r.label, x, by, { size: TF, weight: r.head ? 700 : 500, color: r.head ? s.k.ink : C.ink, maxW: Math.max(20, w) });
         X.sRight(pg, X.sn(r.h, dec), R, by, { size: TF, weight: r.head ? 700 : 600, color: r.head ? s.k.ink : C.ink, num: true });
         if (!r.head) X.hline(pg, s.x + TP, ry + TR, cw - 2 * TP, C.line, 0.5);
@@ -19426,8 +19495,8 @@ window.SL = window.SL || {};
     let y = 92 + X.sTable(pg, 92, X.sT(d)) + 14;
     bl.forEach((b) => X.sWrap(pg, b));
     for (const b of bl) {
-      if (y + X.sBlockH(pg, b, 28) > X.PH - X.MB) { pg = X.more(doc, pg.title); y = pg.y + 6; }
-      y += X.sBlock(pg, y, b, 28) + 10;
+      if (y + X.sBlockH(pg, b, 26) > X.PH - X.MB) { pg = X.more(doc, pg.title); y = pg.y + 6; }
+      y += X.sBlock(pg, y, b, 26) + 10;
     }
     pg.y = y;
     return pg;
@@ -19465,7 +19534,7 @@ window.SL = window.SL || {};
         X.sPage1(doc, d);
         doc.pages.forEach((pg) => foot(pg, d));
         return doc;
-      }, X.A5);
+      }, X.A5, 0.3);
       doc.info = { title: U.L("Float account — ", "حساب العهدة — ") + d.who + " · " + D, author: d.owner, subject: U.L("What you got, what you paid, what you should have", "اللي استلمته واللي صرفته واللي المفروض يكون معك") };
       return doc;
     });
