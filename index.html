@@ -19211,14 +19211,20 @@ window.SL = window.SL || {};
       if (!f.h) continue;
       const row = { date: f.date, h: Math.abs(f.h), name: "", tag: "" };
       if (f.cashId) {
-        if (f.ctype === "topup") row.name = f.from || owner;
+        if (f.ctype === "topup") {
+          // the line names who handed it over; the group is the source it came through (a cash doc's viaGroup, e.g. Sabia
+          // for Sami's and Sameer's cash), else that same name
+          const c = (SL.S.cash || {})[f.cashId] || {};
+          row.name = f.from || owner;
+          row.group = String((U.isAr() ? c.viaGroupAr || c.viaGroup : c.viaGroup) || "").trim() || row.name;
+        }
         else if (f.ctype === "return") row.name = U.L("Gave back to ", "رجّعت ل") + owner;
-        else { row.name = f.h > 0 ? U.L("Other money in", "فلوس ثانية دخلت") : U.L("Other money out", "فلوس طلعت من العهدة"); row.tag = tagOf.get(f.cashId) || ""; }
+        else { row.name = f.h > 0 ? U.L("Other money in", "فلوس ثانية دخلت") : U.L("Other money out", "فلوس طلعت من العهدة"); row.tag = tagOf.get(f.cashId) || ""; row.group = row.name; }
         (f.h > 0 ? got : back).push(row);
       } else {
         const u = M.unit(f.unitKey), who = X.sWho(u, fx);
         row.name = who.name; row.uk = f.unitKey; row.generic = !!who.generic;
-        if (f.refund) { row.tag = u && u.deposit ? U.L("deposit back", "رجّع التأمين") : U.L("money back", "رجّع مبلغ"); got.push(row); }
+        if (f.refund) { row.tag = u && u.deposit ? U.L("deposit back", "رجّع التأمين") : U.L("money back", "رجّع مبلغ"); row.group = U.L("Other money in", "فلوس ثانية دخلت"); got.push(row); }
         else { row.tag = who.tag; spent[GROUP[u ? u.cat : "O"] || "O"].push(row); }
       }
     }
@@ -19413,8 +19419,8 @@ window.SL = window.SL || {};
     return bl.concat([{ k: K.orange, label: lbl, h: Math.abs(c.diff), lines: ol.concat(after) }]);
   };
 
-  /** The T table for d (Ryan, 19 Oct: "one side in and one side out"). The reading side: every line of money in, oldest
-   *  first (from Ryan by day, other money in, money back). The other side: money out per kind (crews · invoices and
+  /** The T table for d (Ryan, 19 Oct: "one side in and one side out"). The reading side: money in per source (who it
+   *  came through: Ryan, Sabia, Hashem, other money in), its total, then every line of it by day. The other side: money out per kind (crews · invoices and
    *  materials · equipment · other, the kinds with money in them) with its total, then who got it (summed per name,
    *  biggest first, each with a one-word tag for what it provided: X.sGist), then what he gave back or let out of the
    *  float. → {in: [{day, label, h}], out: [{label, h, head, day, word}], inTotal, outTotal}; the sides add up to the
@@ -19440,7 +19446,16 @@ window.SL = window.SL || {};
       const head = r.returns && r.adjOut ? U.L("Given back, or other money out", "رجّعته أو طلع من العهدة") : r.returns ? U.L("Given back to ", "رجّعت ل") + d.owner : U.L("Other money out", "فلوس طلعت من العهدة");
       out.push({ label: head, h: r.returns + r.adjOut, head: true }, ...d.back.map((x) => ({ day: X.sDay(x.date), label: lbl(x), h: x.h })));
     }
-    return { in: d.got.map((x) => ({ day: X.sDay(x.date), label: lbl(x), h: x.h })), out, inTotal: d.inTotal, outTotal: d.outTotal };
+    // money in grouped the same way: per source (Ryan, Sabia, Hashem, other money in), biggest first, its total, then its
+    // lines by day; a line says only what its group doesn't already say
+    const groups = new Map();
+    for (const x of d.got) { const g = x.group || x.name; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(x); }
+    const inn = [];
+    for (const [g, rows] of [...groups.entries()].sort((a, b) => U.sum(b[1], (x) => x.h) - U.sum(a[1], (x) => x.h))) {
+      inn.push({ label: g, h: U.sum(rows, (x) => x.h), head: true });
+      for (const x of rows) { const l = lbl(x); inn.push({ day: X.sDay(x.date), label: l === g ? "" : l.indexOf(g + " · ") === 0 ? l.slice(g.length + 3) : l, h: x.h }); }
+    }
+    return { in: inn, out, inTotal: d.inTotal, outTotal: d.outTotal };
   };
 
   // T table metrics (pt, before X.onePage's scale): header · row · totals row · text · header text · cell padding · stem gap
