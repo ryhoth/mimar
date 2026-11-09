@@ -25,7 +25,7 @@ img{max-width:100%}[hidden]{display:none!important}
  * (db / assets / user / downloads / sample), backed by Supabase instead of the claude.ai artifact.
  *   db        → table public.docs (coll, id, data jsonb), live via Realtime; update() = server-side deep merge (rpc doc_update)
  *   assets    → private Storage bucket "receipts"; display URLs are signed and fed to U.assetUrl via window.__SL_DEV_BLOB
- *   user      → Supabase Auth (email sign-in link) + public.members roles: owner / editor write, viewer reads
+ *   user      → Supabase Auth (email + PIN = the account password; an email sign-in link as backup) + public.members roles: owner / editor write, viewer reads
  *   downloads → a normal browser download;  sample → null (photos are read in Claude Code)
  * Config: window.__SL_WEB = {url, anonKey}. Loads before the app; the app waits on use("db") until sign-in completes. */
 (function () {
@@ -260,25 +260,67 @@ img{max-width:100%}[hidden]{display:none!important}
   }
   function ungate() { if (gateEl) { gateEl.remove(); gateEl = null; } }
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const PIN_RE = /^\d{6,12}$/;
+  const pinKey = (email) => "sl.pin." + String(email || "").toLowerCase();
+  const hasPin = (email) => { try { return localStorage.getItem(pinKey(email)) === "1"; } catch (e) { return false; } };
+  const markPin = (email) => { try { localStorage.setItem(pinKey(email), "1"); } catch (e) {} };
   async function showSignIn(note, cls) {
     let lastEmail = ""; try { lastEmail = localStorage.getItem("sl.lastEmail") || ""; } catch (e) {}
-    await gate(`<h1>Mimar</h1><p>Sign in with your email. We'll send you a link. Open it on this device and you stay signed in.</p>
-      <form id="sl-auth-form" novalidate><input id="sl-auth-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(lastEmail)}" aria-label="Email" required>
-      <div style="height:10px"></div><button type="submit" id="sl-auth-send">Email me a sign-in link</button></form>
+    await gate(`<h1>Mimar</h1><p>Sign in with your email and PIN.</p>
+      <form id="sl-auth-form" novalidate><input id="sl-auth-email" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com" value="${esc(lastEmail)}" aria-label="Email" required>
+      <div style="height:10px"></div><input id="sl-auth-pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" placeholder="PIN" aria-label="PIN">
+      <div style="height:10px"></div><button type="submit" id="sl-auth-go">Sign in</button></form>
+      <button class="sec" type="button" id="sl-auth-send">No PIN yet? Email me a link</button>
       <div class="msg ${cls || ""}" id="sl-auth-msg" role="status">${note ? esc(note) : ""}</div>`);
-    const form = gateEl.querySelector("#sl-auth-form");
-    form.addEventListener("submit", async (ev) => {
+    if (lastEmail) setTimeout(() => { const p = gateEl && gateEl.querySelector("#sl-auth-pin"); if (p) p.focus(); }, 40);
+    const $ = (id) => gateEl.querySelector(id);
+    const say = (t, c) => { const m = $("#sl-auth-msg"); m.className = "msg " + c; m.textContent = t; };
+    const readEmail = () => { const e = $("#sl-auth-email").value.trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { say("Enter a valid email address.", "err"); return ""; } try { localStorage.setItem("sl.lastEmail", e); } catch (x) {} return e; };
+    $("#sl-auth-form").addEventListener("submit", async (ev) => {
       ev.preventDefault();
-      const email = gateEl.querySelector("#sl-auth-email").value.trim(), msg = gateEl.querySelector("#sl-auth-msg"), btn = gateEl.querySelector("#sl-auth-send");
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.className = "msg err"; msg.textContent = "Enter a valid email address."; return; }
-      btn.disabled = true; btn.textContent = "Sending…";
-      try { localStorage.setItem("sl.lastEmail", email); } catch (e) {}
+      const email = readEmail(); if (!email) return;
+      const pin = $("#sl-auth-pin").value.trim(), btn = $("#sl-auth-go");
+      if (!PIN_RE.test(pin)) { say("The PIN is 6 to 12 digits. No PIN yet? Use the email link below.", "err"); return; }
+      btn.disabled = true; btn.textContent = "Signing in…";
+      const { error } = await sb.auth.signInWithPassword({ email, password: pin });
+      btn.disabled = false; btn.textContent = "Sign in";
+      if (error) { say(/invalid|credentials/i.test(error.message) ? "Wrong email or PIN. Forgot it? Use the email link below." : /rate|too many/i.test(error.message) ? "Too many tries. Wait a few minutes." : "Couldn't sign in: " + error.message, "err"); return; }
+      markPin(email); // onAuthStateChange(SIGNED_IN) takes it from here
+    });
+    $("#sl-auth-send").addEventListener("click", async () => {
+      const email = readEmail(); if (!email) return;
+      const btn = $("#sl-auth-send"); btn.disabled = true; btn.textContent = "Sending…";
       const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
-      btn.disabled = false; btn.textContent = "Email me a sign-in link";
-      if (error) { msg.className = "msg err"; msg.textContent = /rate|too many|seconds/i.test(error.message) ? "Too many emails just now. Wait a minute and try again." : "Couldn't send the link: " + error.message; return; }
-      msg.className = "msg ok"; msg.textContent = "Link sent to " + email + ". Open it on this device (check spam if it doesn't arrive).";
+      btn.disabled = false; btn.textContent = "No PIN yet? Email me a link";
+      if (error) { say(/rate|too many|seconds/i.test(error.message) ? "Too many emails just now. Wait a minute and try again." : "Couldn't send the link: " + error.message, "err"); return; }
+      say("Link sent to " + email + ". Open it on this device (check spam if it doesn't arrive). Then set a PIN so you don't need emails again.", "ok");
     });
   }
+  /* Set (or change) the PIN: it is the account's Supabase password. Offered once after an email-link sign-in, and in the menu. */
+  async function showSetPin(offer) {
+    const email = session && session.user && session.user.email;
+    await gate(`<h1>${offer ? "Set a PIN" : "Change PIN"}</h1><p>${offer ? "Next time, sign in with your email and this PIN instead of waiting for an email." : "Signed in as <b>" + esc(email) + "</b>."} 6 to 12 digits.</p>
+      <form id="sl-pin-form" novalidate><input id="sl-pin-1" type="password" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="New PIN" aria-label="New PIN">
+      <div style="height:10px"></div><input id="sl-pin-2" type="password" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="Same PIN again" aria-label="Repeat PIN">
+      <div style="height:10px"></div><button type="submit" id="sl-pin-save">Save PIN</button></form>
+      <button class="sec" type="button" id="sl-pin-skip">${offer ? "Not now" : "Cancel"}</button>
+      <div class="msg" id="sl-pin-msg" role="status"></div>`);
+    const $ = (id) => gateEl.querySelector(id);
+    $("#sl-pin-skip").addEventListener("click", () => { if (offer) { try { localStorage.setItem(pinKey(email) + ".skip", "1"); } catch (e) {} } ungate(); });
+    $("#sl-pin-form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const a = $("#sl-pin-1").value.trim(), b = $("#sl-pin-2").value.trim(), m = $("#sl-pin-msg"), btn = $("#sl-pin-save");
+      if (!PIN_RE.test(a)) { m.className = "msg err"; m.textContent = "Use 6 to 12 digits."; return; }
+      if (a !== b) { m.className = "msg err"; m.textContent = "The two PINs don't match."; return; }
+      btn.disabled = true; btn.textContent = "Saving…";
+      const { error } = await sb.auth.updateUser({ password: a });
+      btn.disabled = false; btn.textContent = "Save PIN";
+      if (error) { m.className = "msg err"; m.textContent = /weak|short|length/i.test(error.message) ? "That PIN is too easy. Try another." : "Couldn't save the PIN: " + error.message; return; }
+      markPin(email); m.className = "msg ok"; m.textContent = "PIN saved.";
+      setTimeout(ungate, 700);
+    });
+  }
+  window.__SL_SETPIN = () => showSetPin(false);
   async function showNotMember(email) {
     await gate(`<h1>Mimar</h1><p>You're signed in as <b>${esc(email)}</b>, but this email isn't on the ledger's access list.</p><p>Ask Ryan to add it, then reload this page.</p>
       <button class="sec" id="sl-auth-out" type="button">Sign out</button>`);
@@ -301,13 +343,16 @@ img{max-width:100%}[hidden]{display:none!important}
         if (!member) { showNotMember(s.user.email); return; }
         window.__SL_WHO = { email: s.user.email, role: member.role };
         ungate(); resolve();
+        let skipped = false; try { skipped = localStorage.getItem(pinKey(s.user.email) + ".skip") === "1"; } catch (e) {}
+        if (viaEmail && !hasPin(s.user.email) && !skipped) showSetPin(true);
       };
+      let viaEmail = false;
       (async () => {
-        if (linkTokens) { const { data, error } = await sb.auth.setSession(linkTokens); if (!error && data.session) return finish(data.session); }
+        if (linkTokens) { const { data, error } = await sb.auth.setSession(linkTokens); if (!error && data.session) { viaEmail = true; return finish(data.session); } }
         const { data } = await sb.auth.getSession();
         if (data && data.session) return finish(data.session);
         // listen first, then show the form, so a sign-in completing in another tab or a fast link is never missed
-        const { data: sub } = sb.auth.onAuthStateChange((ev, s) => { if (s && ev === "SIGNED_IN") { sub.subscription.unsubscribe(); finish(s); } });
+        const { data: sub } = sb.auth.onAuthStateChange((ev, s) => { if (s && ev === "SIGNED_IN") { sub.subscription.unsubscribe(); viaEmail = !hasPin(s.user.email); finish(s); } });
         showSignIn(linkError ? "That sign-in link didn't work (" + linkError + "). Send a new one." : "", linkError ? "err" : "");
       })();
     });
@@ -7161,6 +7206,7 @@ window.SL = window.SL || {};
         (U.isAr() ? '<button data-act="menuLang" data-val="en"><span>اللغة · <span lang="en">English</span></span></button>' : '<button data-act="menuLang" data-val="ar"><span>Language · <span lang="ar" class="ar">عربي</span></span></button>') +
         (real ? `<button data-act="${ui.investorView ? "exitInvestor" : "viewInvestor"}">${ui.investorView ? L("Exit investor view", "الخروج من عرض المستثمر") : L("View as investor", "العرض كمستثمر")}</button>` : "") +
         (S().downloads ? '<button data-act="csv">' + L("Download CSV (ledger)", '<span>تنزيل <span lang="en">CSV</span> (الدفتر)</span>') + "</button>" : "") +
+        (window.__SL_WHO && window.__SL_SETPIN ? `<button data-act="setPin">${L("Set PIN", "تعيين الرقم السري")}</button>` : "") +
         (window.__SL_WHO && window.__SL_SIGNOUT ? `<button data-act="signOut">${L("Sign out", "تسجيل الخروج")} <span class="t12 muted">${U.esc(window.__SL_WHO.email)} · ${U.esc(ROLE[window.__SL_WHO.role] ? L(...ROLE[window.__SL_WHO.role]) : window.__SL_WHO.role)}</span></button>` : "") + "</div>",
     });
   };
@@ -7168,6 +7214,7 @@ window.SL = window.SL || {};
   A.menuLang = (d) => { ui.closeAll(); ui.setLang(d.val); };
   /* standalone web version only (app/web/supabase-runtime.js sets __SL_SIGNOUT / __SL_WHO) */
   A.signOut = () => { if (window.__SL_SIGNOUT) window.__SL_SIGNOUT(); };
+  A.setPin = () => { ui.closeAll(); if (window.__SL_SETPIN) window.__SL_SETPIN(); };
   A.viewInvestor = () => { ui.investorView = true; U.ssSet("sl.viewAsInvestor", true); ui.closeAll(); ui.go("report"); };
   A.exitInvestor = () => { ui.investorView = false; U.ssSet("sl.viewAsInvestor", false); ui.closeAll(); ui.go(M.homeRoute(M.project(ui.pid()))); };
 
@@ -21084,6 +21131,31 @@ window.SL = window.SL || {};
       .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
       .map((c) => ({ date: c.date, h: U.hal(c.amount), to: String((U.isAr() ? c.toAr || c.to : c.to || c.toAr) || ""), from: String((U.isAr() ? c.fromAr || c.from : c.from || c.fromAr) || ""), onAccount: !!c.onAccount }));
   };
+  /** Contracts signed and not paid in full yet, on the projects this float serves (Ryan, 9 Nov: "the fire safety that's
+   *  pending"): each accepted quote with something left (M.quoteRemaining) → [{name, job, total, paid, left, parts: [{label,
+   *  h}], byRyan}]. parts: what is left by the quote's payment terms (terms[{label, pct}], in order; the paid amount fills them
+   *  from the first), each named in Arabic by its words (the pump, the Civil Defense handover) or by its percentage. byRyan:
+   *  the quote is paid by the owner directly (payBy / payVia w_ryan), not from the float. Not float money and in no total. */
+  const TERM_AR = [[/pump/i, "توريد المضخة"], [/civil defen[cs]e|handover|testing/i, "الاختبار والتسليم للدفاع المدني"], [/award|advance|down ?payment/i, "عند الترسية"]];
+  X.sPending = (wid, D) => {
+    const pids = new Set(M.projects().filter((p) => M.projectWallets(p.id).includes(wid)).map((p) => p.id)), out = [];
+    for (const q of Object.values(SL.S.quotes || {})) {
+      if (!q || q.void || q.status !== "accepted" || !pids.has(M.pidOf(q)) || (q.date || "") > D) continue;
+      const left = M.quoteRemaining(q); if (!(left > 0)) continue;
+      const total = U.hal(q.total), paid = total - left, terms = (Array.isArray(q.terms) ? q.terms : []).filter((x) => x && U.num(x.pct) > 0), parts = [];
+      let start = 0;
+      terms.forEach((x, i) => {
+        const amt = i === terms.length - 1 ? total - start : Math.round(total * U.num(x.pct) / 100), end = start + amt, rest = Math.max(0, end - Math.max(paid, start));
+        if (rest > 0) { const k = TERM_AR.find(([re]) => re.test(String(x.label || ""))); parts.push({ label: U.isAr() ? (x.labelAr || (k ? k[1] : U.L("instalment ", "دفعة ") + U.num(x.pct) + "%")) : String(x.label || U.num(x.pct) + "%"), h: rest }); }
+        start = end;
+      });
+      const s = ((SL.S.catalog || {}).suppliers || {}).items || {}, sup = s[q.supplierId], j = q.jobId ? M.job(q.jobId) : null;
+      const name = String((U.isAr() ? (sup && sup.ar) || q.supplier : q.supplier || (sup && sup.name)) || "").replace(/^\s*(?:شركة|شركه|مؤسسة|مؤسسه)\s+/, "").trim();
+      const pay = String(q.payVia || q.payBy || "");
+      out.push({ name, job: j ? String((U.isAr() ? j.ar : j.name) || "").replace(/\s*\(.*\)\s*$/, "").trim() : "", total, paid, left, parts, byRyan: pay === "w_ryan" || pay === "me" });
+    }
+    return out.sort((a, b) => b.left - a.left);
+  };
   /** How far the page's data goes (Ryan, 9 Nov: "up to date until what date"): the last invoice he paid that has its paper,
    *  the last crew day worked (not planned, not off), the last top-up, and the last bank statement read for this float
    *  (wallets.bank {account, asOf, balance}: the bank's balance on its own date). As of D; "" when there is none. */
@@ -21176,7 +21248,7 @@ window.SL = window.SL || {};
       }
     }
     const sum = (a) => U.sum(a, (x) => x.h);
-    const d = { wid, D, who: M.walletName(wid), owner, r, adj: r.adj.map((a) => Object.assign({}, a, { tag: tagOf.get(a.id) || "" })), got, spent, back, dups, repaid: X.sRepaid(wid, D), upTo: X.sUpTo(wid, D),
+    const d = { wid, D, who: M.walletName(wid), owner, r, adj: r.adj.map((a) => Object.assign({}, a, { tag: tagOf.get(a.id) || "" })), got, spent, back, dups, repaid: X.sRepaid(wid, D), upTo: X.sUpTo(wid, D), pending: X.sPending(wid, D),
       inTotal: r.topups + r.adjIn + r.refunds, outTotal: r.paidOut + r.returns + r.adjOut };
     const bal = led.length ? led[led.length - 1].bal : 0;
     if (sum(got) !== d.inTotal || sum(back) !== r.returns + r.adjOut || d.inTotal - d.outTotal !== r.holds || bal !== r.holds ||
@@ -21365,7 +21437,17 @@ window.SL = window.SL || {};
    *  as on the Float page) as its figure, said in words either sign; then why (money came in that isn't written down,
    *  or spending isn't / money is missing); then how the book changed since the count (dated after it, or written after
    *  it for its day or earlier), in and out: the book then + in − out = what he should have now. */
-  X.sBlocks = (d) => X.sCount(d, [X.sShould(d)]).concat(X.sRepaidBlock(d), X.sDupBlocks(d));
+  X.sBlocks = (d) => X.sCount(d, [X.sShould(d)]).concat(X.sRepaidBlock(d), X.sPendingBlocks(d), X.sDupBlocks(d));
+  /** A red block per contract not paid in full (X.sPending): the contractor and the job, the contract and what is paid, what
+   *  is left by its payment terms, and who pays it. Its figure is what is left. Not float money. */
+  X.sPendingBlocks = (d) => (d.pending || []).map((p) => {
+    const lines = [];
+    if (p.name || p.job) lines.push({ label: [p.name, p.job].filter(Boolean).join(" · ") });
+    lines.push({ label: U.L("the contract", "العقد"), h: p.total, indent: true }, { label: U.L("paid", "مدفوع"), h: p.paid, indent: true });
+    p.parts.forEach((x, i) => lines.push({ label: x.label, h: x.h, indent: true, rule: i === 0 }));
+    lines.push({ label: p.byRyan ? U.L("Ryan pays it directly, not from the float", "يدفعه ريان مباشرة، مو من العهدة") : U.L("Paid from the float", "يندفع من العهدة"), rule: true });
+    return { k: X.SK.red, label: U.L("Not paid yet", "لسا ما انْدفع"), h: p.left, lines };
+  });
   /** The green block (once anyone has been paid back): who got their money back, on which day, on account or not, and from
    *  whom (X.sRepaid). Its figure is the total paid back. [] when nothing was. */
   X.sRepaidBlock = (d) => {
@@ -21521,11 +21603,16 @@ window.SL = window.SL || {};
     pg.title = U.L("Float account — ", "حساب العهدة — ") + d.who;
     X.text(pg, pg.title, X.MX, 50, { size: 26, weight: 700, maxW: X.CW });
     X.text(pg, U.L("Up to ", "لغاية يوم ") + U.dLong(d.D) + (o.review ? U.L(" · for review: mark any amount you didn't pay or didn't receive", " · للمراجعة: علّم على أي مبلغ ما دفعته أو ما استلمته") : ""), X.MX, 77, { size: 17, color: o.review ? C.owed || C.ink2 : C.ink2, maxW: X.CW });
-    // how far the data goes, under the date (Ryan, 9 Nov)
-    const ut = X.sUpToText(d), uo = { size: 15, weight: 600, color: C.ink2, maxW: X.CW };
-    let ty = 112;
-    if (X.width(pg, ut, uo) <= X.CW) X.text(pg, ut, X.MX, 99, uo);
-    else { const ps = ut.split(" · "), k = Math.ceil(ps.length / 2); X.text(pg, ps.slice(0, k).join(" · "), X.MX, 99, uo); X.text(pg, ps.slice(k).join(" · "), X.MX, 117, uo); ty = 130; }
+    // how far the data goes (Ryan, 9 Nov): four cells across the page, one per date, under the title
+    const u = d.upTo || {}, cells = [[U.L("Last invoice", "آخر فاتورة"), u.invoice], [U.L("Last crew day", "آخر يومية"), u.daily], [U.L("Last top-up", "آخر تحويل"), u.topup], [U.L("Last bank statement", "آخر كشف بنك"), u.bank]];
+    const UG = 6, uw = (X.CW - UG * 3) / 4, uy = 88, uh = 38;
+    cells.forEach(([l, s], i) => {
+      const x = X.MX + i * (uw + UG);
+      X.rrect(pg, x, uy, uw, uh, 6, X.SK.yellow.bg, X.SK.yellow.edge);
+      X.text(pg, l, x + 8, uy + 14, { size: 11, weight: 700, color: X.SK.yellow.ink, maxW: uw - 16 });
+      X.text(pg, s ? U.dDM(s) : "–", x + 8, uy + 31, { size: 15, weight: 700, color: C.ink, maxW: uw - 16 });
+    });
+    const ty = uy + uh + 10;
     let y = ty + X.sTable(pg, ty, X.sT(d, o), o) + 14;
     if (y - 14 > X.PH - X.MB) X.more(doc, pg.title); // the table alone ran past the page: tells X.onePage to go smaller
     bl.forEach((b) => X.sWrap(pg, b));
