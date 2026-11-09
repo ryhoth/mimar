@@ -21061,17 +21061,46 @@ window.SL = window.SL || {};
   X.sGroupOf = (u) => (u && u.doc && u.doc.lump && u.kind !== "crew" ? "L" : GROUP[u ? u.cat : "O"] || "O");
   /** Money in that may be counted twice: cash docs that carry the same dup key (cash.dup, e.g. "pour": Hashem's cash and the
    *  same pour money on Sabia's sheet). The counted ones are the live docs, the held ones the void docs (not counted) →
-   *  [{key, counted: [{date, h, name}], held: [{date, h, name}]}], only for keys with a live doc on this wallet as of D. */
+   *  [{key, counted: [{id, date, h, name, group}], held: [...]}], only for keys with a live and a void top-up on this wallet
+   *  as of D. Ryan, 9 Nov: the mark goes on the held lines (Sami's on Sabia's sheet), never on the counted ones (Hashem's). */
   X.sDups = (wid, D) => {
     const by = new Map();
     for (const [id, c] of Object.entries(SL.S.cash || {})) {
       if (!c || !c.dup || c.type !== "topup" || !c.date || c.walletId !== wid || c.date > D) continue;
       const e = by.get(c.dup) || { key: String(c.dup), counted: [], held: [] };
-      (c.void ? e.held : e.counted).push({ id, date: c.date || "", h: U.hal(c.amount), name: M.topupFrom(Object.assign({ id }, c)) });
+      (c.void ? e.held : e.counted).push({ id, date: c.date || "", h: U.hal(c.amount), name: M.topupFrom(Object.assign({ id }, c)),
+        group: String((U.isAr() ? c.viaGroupAr || c.viaGroup : c.viaGroup) || "").trim() });
       by.set(c.dup, e);
     }
     const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     return [...by.values()].filter((e) => e.counted.length && e.held.length).map((e) => Object.assign(e, { counted: e.counted.sort(byDate), held: e.held.sort(byDate) }));
+  };
+  /** Money paid back to the people who funded the projects this float serves (cash type "repaid": {to, toAr, from, fromAr,
+   *  onAccount}, Ryan, 9 Nov). Not float money and in no money figure (every model sum reads its own cash types); the page
+   *  shows it so the holder sees who has been paid back. → [{date, h, to, from, onAccount}] by date, as of D. */
+  X.sRepaid = (wid, D) => {
+    const pids = new Set(M.projects().filter((p) => M.projectWallets(p.id).includes(wid)).map((p) => p.id));
+    return Object.values(SL.S.cash || {}).filter((c) => c && !c.void && c.type === "repaid" && c.date && c.date <= D && pids.has(M.pidOf(c)))
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+      .map((c) => ({ date: c.date, h: U.hal(c.amount), to: String((U.isAr() ? c.toAr || c.to : c.to || c.toAr) || ""), from: String((U.isAr() ? c.fromAr || c.from : c.from || c.fromAr) || ""), onAccount: !!c.onAccount }));
+  };
+  /** How far the page's data goes (Ryan, 9 Nov: "up to date until what date"): the last invoice he paid that has its paper,
+   *  the last crew day worked (not planned, not off), the last top-up, and the last bank statement read for this float
+   *  (wallets.bank {account, asOf, balance}: the bank's balance on its own date). As of D; "" when there is none. */
+  X.sUpTo = (wid, D) => {
+    const pids = new Set(M.projects().filter((p) => M.projectWallets(p.id).includes(wid)).map((p) => p.id)), mx = (a, b) => (b && b <= D && b > a ? b : a);
+    let invoice = "", daily = "", topup = "";
+    for (const c of Object.values(SL.S.costs || {})) {
+      if (!c || c.void || !(c.files || []).length) continue;
+      if (Object.values(c.payments || {}).some((p) => p && !p.void && p.walletId === wid && p.date && p.date <= D)) invoice = mx(invoice, c.date);
+    }
+    for (const ts of Object.values(SL.S.timesheets || {})) {
+      if (!ts || !pids.has(M.pidOf(ts))) continue;
+      for (const cr of Object.values(ts.crews || {})) for (const [day, v] of Object.entries((cr && cr.days) || {})) if (v && !v.plan && !v.off && (U.num(v.m) > 0 || U.num(v.l) > 0)) daily = mx(daily, day);
+    }
+    for (const c of Object.values(SL.S.cash || {})) if (c && !c.void && c.type === "topup" && c.walletId === wid) topup = mx(topup, c.date);
+    const w = M.wallet(wid) || {}, b = w.bank && typeof w.bank === "object" && w.bank.asOf && w.bank.asOf <= D ? w.bank : null;
+    return { invoice, daily, topup, bank: b ? b.asOf : "", bankH: b ? U.hal(b.balance) : null, account: b ? String(b.account || "") : "" };
   };
   /** A lump-sum job's name: the cost's Arabic before its ":" without the word for lump sum (the group says it), else "". */
   X.sLumpName = (u) => { const s = String((u && u.doc && u.doc.ar) || "").split(/[:：(]/)[0].replace(/\s*مقطوع(?:ية|يه|ة)\s*/g, " ").trim(); return U.isAr() && U.hasAr(s) && s.length <= 26 ? s : ""; }; // a long one keeps its usual name
@@ -21118,7 +21147,7 @@ window.SL = window.SL || {};
     const r = M.floatReceipt(wid, D), led = M.floatLedger(wid, D), owner = M.walletName(M.ownerWalletId()), fx = fixes(wid);
     const tagOf = new Map(r.adj.map((a) => [a.id, isFix(fx, "cash", a.id, a.note) ? X.sFix() : X.sNote(a.note)]));
     const got = [], back = [], spent = {}, moved = {}; // moved: what the lump group took from each group
-    const dups = X.sDups(wid, D), dupIds = new Set(dups.flatMap((e) => e.counted.map((x) => x.id))); // marked only when its block is on the page
+    const dups = X.sDups(wid, D);
     X.SG.forEach((g) => (spent[g.k] = []));
     for (const f of led) {
       if (!f.h) continue;
@@ -21130,7 +21159,6 @@ window.SL = window.SL || {};
           const c = (SL.S.cash || {})[f.cashId] || {};
           row.name = f.from || owner;
           row.group = String((U.isAr() ? c.viaGroupAr || c.viaGroup : c.viaGroup) || "").trim() || row.name;
-          if (dupIds.has(f.cashId)) row.warn = true; // may be the same money as a line on another sheet (X.sDups)
         }
         else if (f.ctype === "return") row.name = U.L("Gave back to ", "رجّعت ل") + owner;
         else { row.name = f.h > 0 ? U.L("Other money in", "فلوس ثانية دخلت") : U.L("Other money out", "فلوس طلعت من العهدة"); row.tag = tagOf.get(f.cashId) || ""; row.group = row.name; }
@@ -21148,7 +21176,7 @@ window.SL = window.SL || {};
       }
     }
     const sum = (a) => U.sum(a, (x) => x.h);
-    const d = { wid, D, who: M.walletName(wid), owner, r, adj: r.adj.map((a) => Object.assign({}, a, { tag: tagOf.get(a.id) || "" })), got, spent, back, dups,
+    const d = { wid, D, who: M.walletName(wid), owner, r, adj: r.adj.map((a) => Object.assign({}, a, { tag: tagOf.get(a.id) || "" })), got, spent, back, dups, repaid: X.sRepaid(wid, D), upTo: X.sUpTo(wid, D),
       inTotal: r.topups + r.adjIn + r.refunds, outTotal: r.paidOut + r.returns + r.adjOut };
     const bal = led.length ? led[led.length - 1].bal : 0;
     if (sum(got) !== d.inTotal || sum(back) !== r.returns + r.adjOut || d.inTotal - d.outTotal !== r.holds || bal !== r.holds ||
@@ -21309,9 +21337,27 @@ window.SL = window.SL || {};
   /** The yellow block: should have = all in − all out (the T table's two totals, right above it). Paid out more than
    *  he got: said so (never "from your own pocket": the book may be missing money in). */
   X.sShould = (d) => {
-    const r = d.r;
-    return r.holds >= 0 ? { k: K.yellow, label: U.L("You should have", "المفروض يكون معك"), h: r.holds, lines: [] }
-      : { k: K.yellow, label: U.L("You paid more than you got", "صرفت أكثر من اللي استلمته"), h: -r.holds, lines: [] };
+    const r = d.r, u = d.upTo || {}, lines = [];
+    // with a bank statement read (wallets.bank): what of it sits in the bank, and so what he holds in cash (Ryan, 9 Nov: the
+    // cash is what the book says, less the bank; never what the holder reports)
+    if (u.bank && u.bankH != null) {
+      // the book on the statement's own day against the bank that day (a top-up after it is in the bank, not in his pocket),
+      // then what the book moved since
+      const atBank = M.floatReceipt(d.wid, u.bank).holds, since = r.holds - atBank, day = X.sDay(u.bank), of = atBank >= u.bankH && u.bankH >= 0;
+      lines.push({ label: (of ? U.L("of it in the bank, statement of ", "منها بالبنك، كشف ") : U.L("in the bank, statement of ", "بالبنك، كشف ")) + day, h: u.bankH, indent: true });
+      if (atBank >= u.bankH) lines.push({ label: U.L("so in cash with you on ", "يعني نقد معك يوم ") + day, h: atBank - u.bankH, indent: true });
+      else lines.push({ label: U.L("the bank held more than the book on ", "البنك كان أكثر من الحساب يوم ") + day, h: u.bankH - atBank, indent: true });
+      if (since > 0) lines.push({ label: U.L("came in after the statement", "دخل بعد الكشف"), h: since, indent: true });
+      else if (since < 0) lines.push({ label: U.L("went out after the statement", "طلع بعد الكشف"), h: -since, indent: true });
+    }
+    return r.holds >= 0 ? { k: K.yellow, label: U.L("You should have", "المفروض يكون معك"), h: r.holds, lines }
+      : { k: K.yellow, label: U.L("You paid more than you got", "صرفت أكثر من اللي استلمته"), h: -r.holds, lines };
+  };
+  /** "Up to date: last invoice 3/11 · last crew day 11/10 · last top-up 4/11 · last bank statement 5/11" (X.sUpTo). */
+  X.sUpToText = (d) => {
+    const u = d.upTo || {}, day = (s) => (s ? X.sDay(s) : "–");
+    return U.L("Up to date: ", "محدّث لغاية: ") + [[U.L("last invoice ", "آخر فاتورة "), u.invoice], [U.L("last crew day ", "آخر يومية "), u.daily], [U.L("last top-up ", "آخر تحويل "), u.topup], [U.L("last bank statement ", "آخر كشف بنك "), u.bank]]
+      .map(([l, s]) => l + day(s)).join(" · ");
   };
 
   /** The blocks under the T table for d (X.sayedData), no drawing: yellow should have · orange the last count (once he
@@ -21319,7 +21365,17 @@ window.SL = window.SL || {};
    *  as on the Float page) as its figure, said in words either sign; then why (money came in that isn't written down,
    *  or spending isn't / money is missing); then how the book changed since the count (dated after it, or written after
    *  it for its day or earlier), in and out: the book then + in − out = what he should have now. */
-  X.sBlocks = (d) => X.sCount(d, [X.sShould(d)]).concat(X.sDupBlocks(d));
+  X.sBlocks = (d) => X.sCount(d, [X.sShould(d)]).concat(X.sRepaidBlock(d), X.sDupBlocks(d));
+  /** The green block (once anyone has been paid back): who got their money back, on which day, on account or not, and from
+   *  whom (X.sRepaid). Its figure is the total paid back. [] when nothing was. */
+  X.sRepaidBlock = (d) => {
+    const rs = d.repaid || [];
+    if (!rs.length) return [];
+    const lines = rs.map((x) => ({ label: x.to + " · " + X.sDay(x.date) + (x.onAccount ? U.L(" · on account", " · على الحساب") : ""), h: x.h }));
+    const froms = U.uniq(rs.map((x) => x.from).filter(Boolean));
+    if (froms.length) lines.push({ label: U.L("Paid by ", "دفعتها ") + froms.join(U.L(" and ", " و")), rule: true });
+    return [{ k: X.SK.green, label: U.L("Paid back to the funders", "انردّت لهم فلوسهم"), h: U.sum(rs, (x) => x.h), lines }];
+  };
   /** One block per set of money in that may be counted twice (X.sDups): what is not counted (per name), what is counted
    *  (per name, with its days), and that it was counted once. Its figure is what is not counted. */
   X.sDupBlocks = (d) => (d.dups || []).map((e) => {
@@ -21339,7 +21395,9 @@ window.SL = window.SL || {};
     if (inn) after.push({ label: U.L("came in since the count", "دخل بعد الجرد"), h: inn, rule: true });
     if (out) after.push({ label: U.L("went out since the count", "طلع بعد الجرد"), h: out, rule: !inn });
     const day = { label: U.L("Count on ", "الجرد يوم ") + U.dShort(c.date) }, counted = { label: U.L("you counted", "وانت عدّيت"), h: c.counted, indent: true };
-    const lbl = U.L("The difference", "الفرق");
+    const lbl = U.L("The difference", "الفرق"), ub = d.upTo && d.upTo.bank && d.upTo.bank > c.date ? d.upTo.bank : "";
+    // a bank statement read after this count is the newer word (Ryan: the cash is the book less the bank)
+    if (ub) after.push({ label: U.L("This count is older than the bank statement of ", "هذا الجرد قبل كشف البنك ") + X.sDay(ub), rule: !after.length });
     if (!c.diff) return bl.concat([{ k: K.orange, label: lbl, txt: U.L("Matches ✓", "مضبوط ✓"), lines: [day, counted, { label: U.L("What you counted matched the book", "اللي عدّيته كان نفس الحساب") }].concat(after) }]);
     const ol = [day,
       c.book >= 0 ? { label: U.L("the book said you should have", "الحساب: المفروض معك"), h: c.book, indent: true } : { label: U.L("the book said you paid more by", "الحساب: صرفت زيادة"), h: -c.book, indent: true },
@@ -21393,7 +21451,17 @@ window.SL = window.SL || {};
     const inn = [];
     for (const [g, rows] of [...groups.entries()].sort((a, b) => U.sum(b[1], (x) => x.h) - U.sum(a[1], (x) => x.h))) {
       inn.push({ label: g, h: U.sum(rows, (x) => x.h), head: true });
-      for (const x of rows) { const l = lbl(x); inn.push({ day: X.sDay(x.date), label: l === g ? "" : l.indexOf(g + " · ") === 0 ? l.slice(g.length + 3) : l, h: x.h, warn: !!x.warn && !(o && o.review), word: x.warn && !(o && o.review) ? U.L("twice?", "مكرر؟") : "" }); } // a review copy has no block to say why
+      for (const x of rows) { const l = lbl(x); inn.push({ day: X.sDay(x.date), label: l === g ? "" : l.indexOf(g + " · ") === 0 ? l.slice(g.length + 3) : l, h: x.h }); }
+      // money on this source's sheet that may be the same as money counted elsewhere (X.sDups): shown, muted and marked, not
+      // counted (the source's total leaves it out; the blue block under the table says why). A review copy has no block: none.
+      if (o && o.review) continue;
+      for (const e of d.dups || []) for (const x of e.held) if (x.group === g || (!x.group && x.name === g))
+        inn.push({ day: X.sDay(x.date), label: x.name === g ? "" : x.name, h: x.h, muted: true, warn: true, word: U.L("twice?", "مكرر؟") });
+    }
+    const lone = o && o.review ? [] : (d.dups || []).flatMap((e) => e.held).filter((x) => !groups.has(x.group || x.name));
+    if (lone.length) {
+      inn.push({ label: U.L("Not counted", "ما انحسبت"), h: U.sum(lone, (x) => x.h), head: true, muted: true });
+      for (const x of lone) inn.push({ day: X.sDay(x.date), label: x.name, h: x.h, muted: true, warn: true, word: U.L("twice?", "مكرر؟") });
     }
     return { in: inn, out, inTotal: d.inTotal, outTotal: d.outTotal };
   };
@@ -21426,7 +21494,7 @@ window.SL = window.SL || {};
           if (r.word) { X.rrect(pg, x, ry + 5, chip, TR - 10, 4, r.warn ? K.blue.edge : "#F0EFE9"); X.text(pg, r.word, x + chip / 2, ry + TR / 2 + (TF - 3) * 0.36, { size: TF - 3, weight: 700, color: r.warn ? K.blue.ink : C.ink2, align: "center" }); }
           x += chip + 6; w -= chip + 6;
         }
-        const ink = r.head ? s.k.ink : r.muted ? C.ink3 : C.ink;
+        const ink = r.muted ? C.ink3 : r.head ? s.k.ink : C.ink;
         X.text(pg, r.label, x, by, { size: r.muted ? TF - 2 : TF, weight: r.head ? 700 : r.muted ? 400 : 500, color: ink, maxW: Math.max(20, w) });
         X.sRight(pg, X.sn(r.h, dec), R, by, { size: r.muted ? TF - 2 : TF, weight: r.head ? 700 : r.muted ? 400 : 600, color: ink, num: true });
         if (!r.head) X.hline(pg, s.x + TP, ry + TR, cw - 2 * TP, C.line, 0.5);
@@ -21453,7 +21521,12 @@ window.SL = window.SL || {};
     pg.title = U.L("Float account — ", "حساب العهدة — ") + d.who;
     X.text(pg, pg.title, X.MX, 50, { size: 26, weight: 700, maxW: X.CW });
     X.text(pg, U.L("Up to ", "لغاية يوم ") + U.dLong(d.D) + (o.review ? U.L(" · for review: mark any amount you didn't pay or didn't receive", " · للمراجعة: علّم على أي مبلغ ما دفعته أو ما استلمته") : ""), X.MX, 77, { size: 17, color: o.review ? C.owed || C.ink2 : C.ink2, maxW: X.CW });
-    let y = 92 + X.sTable(pg, 92, X.sT(d, o), o) + 14;
+    // how far the data goes, under the date (Ryan, 9 Nov)
+    const ut = X.sUpToText(d), uo = { size: 15, weight: 600, color: C.ink2, maxW: X.CW };
+    let ty = 112;
+    if (X.width(pg, ut, uo) <= X.CW) X.text(pg, ut, X.MX, 99, uo);
+    else { const ps = ut.split(" · "), k = Math.ceil(ps.length / 2); X.text(pg, ps.slice(0, k).join(" · "), X.MX, 99, uo); X.text(pg, ps.slice(k).join(" · "), X.MX, 117, uo); ty = 130; }
+    let y = ty + X.sTable(pg, ty, X.sT(d, o), o) + 14;
     if (y - 14 > X.PH - X.MB) X.more(doc, pg.title); // the table alone ran past the page: tells X.onePage to go smaller
     bl.forEach((b) => X.sWrap(pg, b));
     for (const b of bl) {
