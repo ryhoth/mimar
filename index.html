@@ -21570,7 +21570,7 @@ window.SL = window.SL || {};
         X.sPage1(doc, d, o);
         doc.pages.forEach((pg) => foot(pg, d));
         return doc;
-      }, X.A5, 0.3);
+      }, X.A5, 0.22); // Ryan: one page, whatever it holds (the floor was 0.3 before the up-to line and the paid-back block)
       doc.info = { title: U.L("Float account — ", "حساب العهدة — ") + d.who + " · " + D, author: d.owner, subject: U.L("What you got, what you paid, what you should have", "اللي استلمته واللي صرفته واللي المفروض يكون معك") };
       return doc;
     });
