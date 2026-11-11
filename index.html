@@ -3191,6 +3191,30 @@ abbr.ab:not(.ab-full){border-bottom:1px dotted var(--ink-3)}
 /* logo */
 .brand{display:flex;align-items:center;gap:8px}.brand .logo{flex:none;border-radius:6px;object-fit:cover;box-shadow:0 0 0 1px var(--line-2)}
 
+/* ---- 86-screen.css ---- */
+/* 86-screen — "Big screen" (Ryan, 11 Nov 2026): the 34-inch ultrawide on the Mac mini (3440 × 1440) against the MacBook Pro.
+ * html.scr-big is set by ui.applyScreen (More › Screen: Auto · Big screen · MacBook; Auto takes it from 2200 px wide).
+ * Bigger type (every size is in rem), wider side columns, and on Plan review the three lenses side by side:
+ * the screen is wide and short, so Design · Economic · Technical each get the full height instead of a third of it. */
+html.scr-big{font-size:18px;--gutter:32px}
+.menu .menu-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:6px 4px;border-bottom:1px solid var(--line);font-weight:600}
+.menu .menu-row .seg button{min-height:0;padding:0 12px;border-bottom:0}
+.rv-scr{flex:none;height:24px;padding:0 10px;border-radius:12px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);font:inherit;font-size:var(--t-12);font-weight:600;cursor:pointer}
+.rv-scr[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media (min-width:1100px){
+  html.scr-big body.desk{grid-template-columns:248px minmax(0,1fr) auto}
+  html.scr-big body.desk .rrail{width:400px}
+  html.scr-big .sheet{width:580px}
+}
+@container (min-width:1180px){
+  html.scr-big .rv-grid{grid-template-columns:330px minmax(0,1fr) 260px 480px;grid-template-rows:auto minmax(0,1fr) 240px}
+}
+@container (min-width:1900px){
+  html.scr-big .rv-grid{grid-template-columns:350px minmax(0,1fr) 300px minmax(1080px,42%)}
+  html.scr-big .rv-call{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,1fr) auto}
+  html.scr-big .rv-call .rv-drop{grid-column:1/-1;max-height:170px}
+}
+
 </style>
 <nav class="rail" id="rail" aria-label="Sections"></nav>
 <div class="app" id="app">
@@ -6847,6 +6871,7 @@ window.SL = window.SL || {};
     }
     const s = S(), r = ui.route, pid = ui.pid();
     document.body.classList.toggle("desk", window.innerWidth >= 1100);
+    ui.applyScreen();
     const view = document.getElementById("view");
     if (s.ready || s.noRuntime) view.removeAttribute("aria-busy"); else view.setAttribute("aria-busy", "true");
     chromeLabels();
@@ -7256,6 +7281,7 @@ window.SL = window.SL || {};
     ui.sheet({
       title: L("More", "المزيد"),
       body: () => '<div class="menu">' + items.map(([k, l]) => `<button data-go="${k === "plans" ? ui.plansHref() : ui.href(k)}">${l}</button>`).join("") +
+        (window.innerWidth >= 1100 ? '<div class="menu-row"><span>' + L("Screen", "الشاشة") + "</span>" + ui.screenSeg() + "</div>" : "") +
         (U.isAr() ? '<button data-act="menuLang" data-val="en"><span>اللغة · <span lang="en">English</span></span></button>' : '<button data-act="menuLang" data-val="ar"><span>Language · <span lang="ar" class="ar">عربي</span></span></button>') +
         (real ? `<button data-act="${ui.investorView ? "exitInvestor" : "viewInvestor"}">${ui.investorView ? L("Exit investor view", "الخروج من عرض المستثمر") : L("View as investor", "العرض كمستثمر")}</button>` : "") +
         (S().downloads ? '<button data-act="csv">' + L("Download CSV (ledger)", '<span>تنزيل <span lang="en">CSV</span> (الدفتر)</span>') + "</button>" : "") +
@@ -7263,6 +7289,14 @@ window.SL = window.SL || {};
         (window.__SL_WHO && window.__SL_SIGNOUT ? `<button data-act="signOut">${L("Sign out", "تسجيل الخروج")} <span class="t12 muted">${U.esc(window.__SL_WHO.email)} · ${U.esc(ROLE[window.__SL_WHO.role] ? L(...ROLE[window.__SL_WHO.role]) : window.__SL_WHO.role)}</span></button>` : "") + "</div>",
     });
   };
+  /* Screen size (Ryan, 11 Nov 2026): "big" = the 34-inch ultrawide on the Mac mini, "laptop" = the MacBook Pro;
+     "auto" takes big from 2200 px wide. Kept on the device (localStorage), so each Mac remembers its own. */
+  ui.screenPref = () => { const v = U.lsGet("sl.screen", "auto"); return v === "big" || v === "laptop" ? v : "auto"; };
+  ui.isBig = () => { const v = ui.screenPref(), w = window.innerWidth; return w >= 1100 && (v === "big" || (v === "auto" && w >= 2200)); };
+  ui.applyScreen = () => document.documentElement.classList.toggle("scr-big", ui.isBig());
+  ui.screenSeg = () => '<span class="seg scr-seg">' + [["auto", U.L("Auto", "تلقائي")], ["big", U.L("Big screen", "شاشة كبيرة")], ["laptop", U.L("MacBook", "ماك بوك")]]
+    .map(([k, l]) => `<button type="button" class="${ui.screenPref() === k ? "on" : ""}" data-act="setScreen" data-val="${k}" aria-pressed="${ui.screenPref() === k}">${l}</button>`).join("") + "</span>";
+  A.setScreen = (d) => { U.lsSet("sl.screen", d.val); ui.closeAll(); ui.applyScreen(); render(); };
   /** Language from the ⋯ menu: close the menu, then switch. */
   A.menuLang = (d) => { ui.closeAll(); ui.setLang(d.val); };
   /* standalone web version only (app/web/supabase-runtime.js sets __SL_SIGNOUT / __SL_WHO) */
@@ -16267,7 +16301,7 @@ window.SL = window.SL || {};
   /** Where you are inside the set: section monogram · word › page title … p. n / N, and the deck's own page. */
   X.where = (R, i, d) => {
     const p = R.pages[i], s = X.secOf(R, p), deck = SL._systems && SL._systems.deckLink && d ? SL._systems.deckLink(d, p.n) : "";
-    return `<span class="rv-cr${X.sc(s && s.sys)}">${X.smono(s && s.sys, s && s.mono)}<b>${X.secWord(s)}</b></span><span class="sep">›</span><span class="rv-cr"><b>${X.pageTitle(p, s)}</b></span><span class="spacer"></span><span class="rv-ctr num">${U.L("p. ", "ص. ")}${p.n} / ${(R.deck && R.deck.slides) || R.pages.length}</span>${deck ? `<span class="rv-deck">${deck}</span>` : ""}`;
+    return `<span class="rv-cr${X.sc(s && s.sys)}">${X.smono(s && s.sys, s && s.mono)}<b>${X.secWord(s)}</b></span><span class="sep">›</span><span class="rv-cr"><b>${X.pageTitle(p, s)}</b></span><span class="spacer"></span>${window.innerWidth >= 1100 ? `<button type="button" class="rv-scr" data-act="setScreen" data-val="${SL.ui.isBig() ? "laptop" : "big"}" aria-pressed="${SL.ui.isBig()}">${U.L("Big screen", "شاشة كبيرة")}</button>` : ""}<span class="rv-ctr num">${U.L("p. ", "ص. ")}${p.n} / ${(R.deck && R.deck.slides) || R.pages.length}</span>${deck ? `<span class="rv-deck">${deck}</span>` : ""}`;
   };
   X.secOf = (R, p) => (R.sections || []).find((s) => s.key === p.sec) || null;
   X.rail = (R) => {
