@@ -2393,12 +2393,24 @@ html[dir=rtl] .v-capital .v-cap-fronted{box-shadow:inset -3px 0 0 var(--warn)}
 .sys-cmp{grid-column:1/-1;grid-row:3;padding-top:1px;line-height:1.5;overflow-wrap:anywhere}
 .sys-ar{font-weight:500}
 .sys-txt{font-size:var(--t-13);line-height:1.5;white-space:pre;overflow:auto;text-align:start}
-/* the facade options (§4.4): 2-up tiles, all seven in view; the chosen one wears the shared .tile.on ring and its word */
-.v-systems .tile.opt .tl{flex-wrap:wrap;row-gap:2px}
-.v-systems .tile.opt .chosen{font-size:var(--t-12);font-weight:700;color:var(--ink);white-space:nowrap}
-.sys-traits{min-height:16px}
-.sys-sheet .bx{display:flex;width:100%}
-.sys-sheet .tgs{padding-top:2px}
+/* the facade options (§4.4): one table, a row per option; it scrolls sideways inside its figure on a phone, the option name stays put */
+.sys-optfig{margin:0;overflow-x:auto}
+.sys-optfig table.t th{position:static}
+.sys-optfig table.t tbody th{position:sticky;inset-inline-start:0;background:var(--bg);white-space:nowrap;text-transform:none;letter-spacing:0;font-size:var(--t-13);color:var(--ink);font-weight:700}
+.sys-optfig table.t td{vertical-align:top}
+.sys-optfig tr.on>*{background:var(--paper)}
+.sys-optfig tr.on>th{box-shadow:inset 3px 0 0 var(--ink)}
+html[dir=rtl] .sys-optfig tr.on>th{box-shadow:inset -3px 0 0 var(--ink)}
+.so-what{min-width:15rem}
+.so-note{display:block;font-weight:600;max-width:none}
+.so-what .tgs{padding:2px 0}
+.so-views{display:block;font-size:var(--t-12)}
+.so-deck{white-space:nowrap}
+.sys-optfig table.t tbody th{vertical-align:top}
+.so-name,.so-pick{display:block}
+.so-pick{padding-top:6px;font-weight:500}
+.so-on{font-weight:700}
+.v-systems .hrow .sys-rev{margin-inline-end:8px;background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
 /* the Design screen's Systems tile: one row of smono · word · sheet count per system, tap → #systems */
 .ds-sysrow{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--t-12);font-weight:600;color:var(--ink-2)}
 .ds-sysk{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
@@ -6744,6 +6756,10 @@ window.SL = window.SL || {};
   };
   /** Build a hash for a route in the current project: ui.href("crew", cid, sat) → "#p1~crew.cid.sat" */
   ui.href = (name, ...args) => { const pid = ui.pid(); return "#" + (pid && name !== "projects" ? pid + "~" : "") + [name, ...args.filter((a) => a != null && a !== "")].join("."); };
+  /** The reviewed plan sets of a project (spec part 5) and the shortest way in: straight to the set when there is one, else the list. */
+  ui.planSets = (pid) => Object.values((SL.S && SL.S.drawings) || {}).filter((d) => d && !d.void && d.planReview && typeof d.planReview === "object" && SL.model.pidOf(d) === (pid || ui.pid()));
+  ui.plansCount = (pid) => ui.planSets(pid).length;
+  ui.plansHref = (pid) => { const ds = ui.planSets(pid); return ds.length === 1 ? ui.href("plans", ds[0].id) : ui.href("plans"); };
   ui.go = (name, ...args) => { const h = name.startsWith("#") ? name : ui.href(name, ...args); if (location.hash === h) render(); else location.hash = h; };
   ui.replace = (name, ...args) => { const h = ui.href(name, ...args); history.replaceState(null, "", h); onHash(); };
   function onHash() {
@@ -6963,7 +6979,7 @@ window.SL = window.SL || {};
     const ro = ui.readOnlyUI(), pre = ui.isPre(pid);
     const L = U.L;
     // [route, label, group]: a project in its design / buy phase gets the DESIGN · BUY · BUILD · MORE groups (§1.2); a building one the plain list of today
-    const pre1 = [["design", L("Design", "التصميم"), "design"], ["systems", L("Systems", "الأنظمة"), "design"], ["boq", L("BOQ", "جدول الكميات"), "buy"], ["bids", L("Bids", "العطاءات"), "buy"]];
+    const pre1 = [["design", L("Design", "التصميم"), "design"], ["systems", L("Systems", "الأنظمة"), "design"], ["plans", L("Plan review", "مراجعة المخططات"), "design"], ["boq", L("BOQ", "جدول الكميات"), "buy"], ["bids", L("Bids", "العطاءات"), "buy"]];
     const build = [["balances", L("Balances", "الأرصدة")], ["audit", L("Crews", "العمالة")], ["eqaudit", L("Equipment", "المعدات")], ["invaudit", L("Invoices", "الفواتير")], ["today", L("Today", "اليوم")], ["week", L("Week", "الأسبوع")], ["project", L("Project", "المشروع")], ["timeline", L("Timeline", "الجدول الزمني")], ["ledger", L("Ledger", "الدفتر")], ["pay", L("Pay", "الدفع")]].map((x) => x.concat("build"));
     const more = [["inbox", L("Docs", "المستندات")], ["report", L("Report", "التقرير")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")], ["map", L("Map", "خريطة التطبيق")]].map((x) => x.concat("more"));
     const items = ro ? (pre ? [["report", L("Report", "التقرير")], ["design", L("Design", "التصميم")], ["boq", L("BOQ", "جدول الكميات")], ["bids", L("Bids", "العطاءات")]] : [["report", L("Report", "التقرير")], ["project", L("Jobs", "البنود")], ["timeline", L("Timeline", "الجدول الزمني")], ["ledger", L("Ledger", "الدفتر")]])
@@ -6978,7 +6994,7 @@ window.SL = window.SL || {};
     let grp = "";
     for (const [k, l, g] of items) {
       if (pre && !ro && g && g !== grp) { grp = g; h += '<div class="lbl rail-grp">' + GRP[g] + "</div>"; }
-      h += `<button class="${name === k || (TAB_OF[name] === k && !items.some(([x]) => x === name)) ? "on" : ""}" data-go="${ui.href(k)}"><span>${l}</span>${k === "flags" && fc.stop + fc.check ? '<span class="t12">' + (fc.stop ? '<span class="c-stop">▲' + fc.stop + "</span> " : "") + (fc.check ? '<span class="c-warn">△' + fc.check + "</span>" : "") + "</span>" : ""}</button>`;
+      h += `<button class="${name === k || (TAB_OF[name] === k && !items.some(([x]) => x === name)) ? "on" : ""}" data-go="${k === "plans" ? ui.plansHref() : ui.href(k)}"><span>${l}</span>${k === "flags" && fc.stop + fc.check ? '<span class="t12">' + (fc.stop ? '<span class="c-stop">▲' + fc.stop + "</span> " : "") + (fc.check ? '<span class="c-warn">△' + fc.check + "</span>" : "") + "</span>" : ""}</button>`;
     }
     if (!ro) h += '<div class="sep"></div><button data-act="add"><span>' + L("+ Add", "+ إضافة") + "</span></button>";
     const n = SL.store.docCount();
@@ -7197,12 +7213,12 @@ window.SL = window.SL || {};
     const ro = ui.readOnlyUI(), real = S().canWrite !== false, L = U.L;
     // Design and Buy are reachable from here in every phase (§1.2); viewers get them only before the build. Systems (spec part 4 §6)
     // is listed for a project in its design / buy phase; the Map (§4.6) everywhere, viewers included
-    const items = [["balances", L("Balances (who owes whom)", "الأرصدة (مَن يدين لمَن)")], ["audit", L("Crews (who came, day by day)", "العمالة (مَن حضر، يوماً بيوم)")], ["eqaudit", L("Equipment (what is on site)", "المعدات (ما في الموقع)")], ["invaudit", L("Invoices (received, paid, prices)", "الفواتير (المستلمة، المدفوعة، الأسعار)")], ["today", L("Today (crews, rentals, bought today)", "اليوم (العمالة، الإيجار، مشتريات اليوم)")], ["design", L("Design (drawings, milestones)", "التصميم (المخططات، المحطات)")], ["systems", L("Systems (electrical, water, drainage…)", "الأنظمة (الكهرباء، المياه، الصرف…)")], ["boq", L("Buy (BOQ, bids)", "الشراء (جدول الكميات، العطاءات)")], ["report", L("Report (investor view)", "التقرير (عرض المستثمر)")], ["capital", L("Capital & sources", "رأس المال والمصادر")], ["ledger", L("Ledger (every cost)", "الدفتر (كل التكاليف)")], ["timeline", L("Timeline (Gantt)", "الجدول الزمني (مخطط)")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")], ["map", L("Map · everything Mimar does", "خريطة التطبيق · كل ما يفعله معمار")]]
-      .filter(([k]) => (k !== "systems" || ui.isPre()) && (!ro || ["report", "ledger", "timeline", "map"].includes(k) || (ui.isPre() && ["design", "systems", "boq"].includes(k))));
+    const items = [["balances", L("Balances (who owes whom)", "الأرصدة (مَن يدين لمَن)")], ["audit", L("Crews (who came, day by day)", "العمالة (مَن حضر، يوماً بيوم)")], ["eqaudit", L("Equipment (what is on site)", "المعدات (ما في الموقع)")], ["invaudit", L("Invoices (received, paid, prices)", "الفواتير (المستلمة، المدفوعة، الأسعار)")], ["today", L("Today (crews, rentals, bought today)", "اليوم (العمالة، الإيجار، مشتريات اليوم)")], ["design", L("Design (drawings, milestones)", "التصميم (المخططات، المحطات)")], ["systems", L("Systems (electrical, water, drainage…)", "الأنظمة (الكهرباء، المياه، الصرف…)")], ["plans", L("Plan review (the drawings, page by page)", "مراجعة المخططات (صفحة بصفحة)")], ["boq", L("Buy (BOQ, bids)", "الشراء (جدول الكميات، العطاءات)")], ["report", L("Report (investor view)", "التقرير (عرض المستثمر)")], ["capital", L("Capital & sources", "رأس المال والمصادر")], ["ledger", L("Ledger (every cost)", "الدفتر (كل التكاليف)")], ["timeline", L("Timeline (Gantt)", "الجدول الزمني (مخطط)")], ["flags", L("Flags", "التنبيهات")], ["settings", L("Settings", "الإعدادات")], ["map", L("Map · everything Mimar does", "خريطة التطبيق · كل ما يفعله معمار")]]
+      .filter(([k]) => (k !== "systems" || ui.isPre()) && (k !== "plans" || ui.plansCount() > 0) && (!ro || ["report", "ledger", "timeline", "map"].includes(k) || (ui.isPre() && ["design", "systems", "plans", "boq"].includes(k))));
     const ROLE = { owner: ["owner", "مالك"], editor: ["editor", "محرر"], viewer: ["viewer", "مشاهد"] };
     ui.sheet({
       title: L("More", "المزيد"),
-      body: () => '<div class="menu">' + items.map(([k, l]) => `<button data-go="${ui.href(k)}">${l}</button>`).join("") +
+      body: () => '<div class="menu">' + items.map(([k, l]) => `<button data-go="${k === "plans" ? ui.plansHref() : ui.href(k)}">${l}</button>`).join("") +
         (U.isAr() ? '<button data-act="menuLang" data-val="en"><span>اللغة · <span lang="en">English</span></span></button>' : '<button data-act="menuLang" data-val="ar"><span>Language · <span lang="ar" class="ar">عربي</span></span></button>') +
         (real ? `<button data-act="${ui.investorView ? "exitInvestor" : "viewInvestor"}">${ui.investorView ? L("Exit investor view", "الخروج من عرض المستثمر") : L("View as investor", "العرض كمستثمر")}</button>` : "") +
         (S().downloads ? '<button data-act="csv">' + L("Download CSV (ledger)", '<span>تنزيل <span lang="en">CSV</span> (الدفتر)</span>') + "</button>" : "") +
@@ -13660,7 +13676,7 @@ window.SL = window.SL || {};
     const links = s.files.map((id, i) => { const f = info(id), lbl = f && f.discipline ? X.disc(f.discipline) : f && f.name && s.files.length > 1 ? U.t(f.name) : s.files.length > 1 ? String(i + 1) : U.L("file", "الملف"); return `<a class="lnk" href="${U.esc(U.assetUrl(id))}" target="_blank" rel="noopener">⤓ ${lbl}${f && f.pages && s.files.length > 1 ? ' <small class="muted">' + f.pages + "</small>" : ""}</a>`; }).join("");
     // a set Claude Code reviewed (spec part 5): "Plan review · 340 points ›" opens #plans.<id>
     const pr = s.plan, prN = pr && pr.points ? (+pr.points.design || 0) + (+pr.points.economic || 0) + (+pr.points.technical || 0) : 0;
-    const rev = pr && s.id ? `<a class="lnk ds-rev" href="${U.esc(ui.href("plans", s.id))}" data-go="${U.esc(ui.href("plans", s.id))}">${U.L("Plan review", "مراجعة المخططات")}${prN ? " · " + U.L(prN + " points", prN + " ملاحظة") : ""} ›</a>` : "";
+    const rev = pr && s.id ? `<a class="btn sm ds-rev" href="${U.esc(ui.href("plans", s.id))}" data-go="${U.esc(ui.href("plans", s.id))}">${U.L("Plan review", "مراجعة المخططات")}${prN ? " · " + U.L(prN + " points", prN + " ملاحظة") : ""} ›</a>` : "";
     return `<div class="row nosw ds-row"><span class="t${s.unreviewed ? " unrev" : ""}">${X.title(s)}</span><span class="a">${X.statusChip(s, ro)}</span><span class="f"></span>
       <span class="m">${meta}</span><span class="w"></span><span class="ds-files">${links || '<span class="muted">' + U.L("no file", "بلا ملف") + "</span>"}${rev}</span></div>`;
   };
@@ -15536,7 +15552,7 @@ window.SL = window.SL || {};
  * (nine, in the fixed order S E L P W D M F X), the sheets and jobs of a system, and its predicted buy list grouped by fix
  * (#systems.<key>); the facade options, the materials board and the exterior list (#systems.ext). Every figure comes from
  * SL.systems (14-systems-model.js), guarded: with no model the screen renders an honest empty state. Quantities are count
- * estimates (~), never a price, never a budget. Edits: the facade choice (a pick sheet with one button, Choose this, toast
+ * estimates (~), never a price, never a budget. Edits: the facade choice (Choose on the option's table row, toast
  * with Undo) and "Copy as checklist" (text only, no price column). Read-only viewers see the matrix, the tiles with their
  * sheet counts and jobs, the sheets and the options with the chosen mark; no fix bursts, no buy lists, no buttons. */
 (function (SL) {
@@ -15699,10 +15715,23 @@ window.SL = window.SL || {};
     return `<div class="matrix sys-matrix" role="table" aria-label="${U.L("Building × systems", "المبنى × الأنظمة")}" style="--cols:${N}">${head}${rows}</div>`;
   };
 
-  /** The option tile (§4.4): name · 3 trait chips · Chosen ✓; the tap opens the option sheet (no link, no pick on the tile body). */
-  X.optTile = (o, chosenKey) => {
-    const on = !!chosenKey && chosenKey === o.key, traits = (U.isAr() && Array.isArray(o.traitsAr) && o.traitsAr.length ? o.traitsAr : Array.isArray(o.traits) ? o.traits : []).slice(0, 3);
-    return `<button type="button" class="tile sys-ext opt${on ? " on" : ""}" data-act="sysOption" data-opt="${U.esc(o.key)}" aria-label="${U.esc(U.nm(o))}${on ? " · " + U.L("Chosen ✓", "المختار ✓") : ""}"><span class="tl sys-ext">${X.smono("ext")}<b>${U.t(U.nm(o))}</b>${on ? `<span class="chosen">${U.L("Chosen ✓", "المختار ✓")}</span>` : ""}</span><span class="tgs sys-traits">${traits.map((t) => `<span class="tg">${U.t(t)}</span>`).join("") || `<span class="tg faint">${U.L("no traits", "بلا سمات")}</span>`}</span></button>`;
+  /** The facade options as one table (Ryan, 11 Nov 2026: a table, nothing to tap open): one row per option with what it is, its traits
+   *  and views, every material's share of the facade, the deck pages, and Choose on the row itself (writers). */
+  X.optTable = (pid, opts, ch, ro) => {
+    const board = X.board(pid, opts), W = X.MATS();
+    const sh = (o, k) => (o.materials && typeof o.materials === "object" ? U.num(o.materials[k]) : 0);
+    const keys = U.sortBy(U.uniq([].concat(...opts.map((o) => Object.keys(o.materials && typeof o.materials === "object" ? o.materials : {})))).filter((k) => opts.some((o) => sh(o, k) > 0)), (k) => Math.max(...opts.map((o) => sh(o, k))), "desc");
+    const row = (o) => {
+      const on = !!ch && ch.option === o.key, doc = o.drawingId ? (S().drawings || {})[o.drawingId] : null;
+      const traits = U.isAr() && Array.isArray(o.traitsAr) && o.traitsAr.length ? o.traitsAr : Array.isArray(o.traits) ? o.traits : [];
+      const note = (U.isAr() && o.noteAr) || o.note || "", views = Array.isArray(o.views) ? o.views : [];
+      const pages = Array.isArray(o.pages) ? o.pages.map(U.num).filter((n) => n > 0) : [];
+      const pick = on ? `<b class="so-on">${U.L("Chosen ✓", "المختار ✓")}</b>${ch.at ? ` <small class="muted">${U.esc(U.dDM(ch.at))}</small>` : ""}` : ro ? "" : `<button type="button" class="btn sm" data-act="sysChoose" data-opt="${U.esc(o.key)}">${U.L("Choose", "اختر")}</button>`;
+      return `<tr${on ? ' class="on"' : ""}><th scope="row"><span class="so-name">${U.t(U.nm(o))}</span><span class="so-pick">${pick}</span></th><td class="so-what">${note ? `<span class="so-note prose">${U.t(note)}</span>` : ""}${traits.length ? `<span class="tgs">${traits.map((t) => `<span class="tg">${U.t(t)}</span>`).join("")}</span>` : ""}${views.length ? `<span class="so-views muted">${views.map((v) => `<span>${U.t(v)}</span>`).join(" · ")}</span>` : ""}</td>` +
+        keys.map((k) => `<td class="r">${sh(o, k) > 0 ? X.pct(sh(o, k)) : '<span class="zero">–</span>'}</td>`).join("") +
+        `<td class="so-deck">${pages.map((n) => X.deckLink(doc, n, o.assetId) || X.page(n)).join(" · ") || '<span class="zero">–</span>'}</td></tr>`;
+    };
+    return `<figure class="sys-optfig"><table class="t" aria-label="${U.L("Exterior options", "خيارات الواجهة")}"><thead><tr><th>${U.L("Option", "الخيار")}</th><th>${U.L("What it is", "ما هو")}</th>${keys.map((k) => `<th class="r">${W[k] || X.matName(board, k)}</th>`).join("")}<th>${U.L("Deck", "العرض")}</th></tr></thead><tbody>${opts.map(row).join("")}</tbody></table></figure>`;
   };
   X.options = (pid) => { const y = Y(); const o = y && y.options ? y.options(pid) : []; return Array.isArray(o) ? o.filter((x) => x && x.key) : []; };
   /** The chosen facade: projects.choices.facade (through the model when it answers), {option, drawingId, at, by, note} | null. */
@@ -15801,11 +15830,12 @@ window.SL = window.SL || {};
       const p = M.project(pid); if (!p) return "";
       const ro = X.ro(), arg = (route.args || [])[0] || "", keys = X.KEYS(), y = SL.systems;
       const hrow = (title, right) => `<div class="hrow"><h2 class="t20">${title}</h2><span class="spacer"></span>${right || ""}</div>`;
+      const rev = ui.plansCount(pid) ? `<a class="btn sm sys-rev" href="${U.esc(ui.plansHref(pid))}" data-go="${U.esc(ui.plansHref(pid))}">${U.L("Plan review", "مراجعة المخططات")} ›</a>` : "";
       let h = '<div class="v-systems">';
       if (!arg) {
         // the overview: the matrix, the two bursts once (plus the layout's counts), nine two-line tiles 2-up
         const m = X.matrix(pid), lay = X.layout(pid);
-        h += hrow(U.L("Systems", "الأنظمة"));
+        h += hrow(U.L("Systems", "الأنظمة"), rev);
         h += `<div class="sec">${X.matrixHtml(pid)}${m.any ? "" : `<p class="empty t12">${U.L("No systems yet · Send the MEP deck to Claude in chat", "لا أنظمة بعد · أرسل مخططات الخدمات إلى Claude في المحادثة")} <a class="lnk" href="${U.esc(ui.href("design"))}" data-go="${U.esc(ui.href("design"))}">${U.L("Design ›", "التصميم ›")}</a></p>`}</div>`;
         const t = lay && lay.totals && typeof lay.totals === "object" ? lay.totals : null, tilde = (n) => (lay && lay.est ? U.ltr("~" + X.qty(n)) : X.qty(n));
         h += `<div class="bxs">${est()}${X.bx(U.L("Finishes", "التشطيبات"), U.L("in the BOQ, not here", "في جدول الكميات، ليست هنا"))}` +
@@ -15814,7 +15844,7 @@ window.SL = window.SL || {};
         if (!y) h += `<p class="empty t12">${U.L("The systems model is missing · nothing is predicted", "نموذج الأنظمة غير موجود · لا توقعات")}</p>`;
         return h + "</div>";
       }
-      if (arg === "ext") return h + hrow(U.L("Facade", "الواجهة"), back(ui.href("systems"), U.L("‹ Systems", "‹ الأنظمة"))) + X.extPage(pid, ro) + "</div>";
+      if (arg === "ext") return h + hrow(U.L("Facade", "الواجهة"), rev + back(ui.href("systems"), U.L("‹ Systems", "‹ الأنظمة"))) + X.extPage(pid, ro) + "</div>";
       if (!keys.includes(arg)) return h + hrow(U.L("Systems", "الأنظمة"), back(ui.href("systems"), U.L("‹ Systems", "‹ الأنظمة"))) + `<div class="sec"><p class="empty t12">${U.L("No such system · pick one below", "لا نظام بهذا الاسم · اختر واحداً أدناه")}</p><div class="tiles sys-tiles">${keys.map((k) => X.tile(pid, k, ro)).join("")}</div></div></div>`;
       // one system: the tile, its sheets per floor (every page a link), its jobs, then (writers) what to buy
       const sh = X.sheets(pid, arg), jobs = X.jobs(pid, arg);
@@ -15829,13 +15859,13 @@ window.SL = window.SL || {};
     },
   };
 
-  /** #systems.ext: the options (2-up tiles, all seven in view, tap → the option sheet), the materials board as bursts, the chosen
+  /** #systems.ext: the options as one table (every option, its materials and its Choose in view), the materials board as bursts, the chosen
    *  option (or the empty state "No option chosen · Choose one"), then the exterior rows (writers only). */
   X.extPage = (pid, ro) => {
     const opts = X.options(pid), ch = X.chosen(pid), cur = ch ? opts.find((o) => o.key === ch.option) : null, board = X.board(pid, opts);
     let h = `<div class="sec">`;
     if (!opts.length) h += `<div class="tiles"><div class="tile sys-ext"><span class="tl sys-ext">${X.smono("ext")}<b>${X.sys("ext").name}</b></span>${X.bx(U.L("Options", "الخيارات"), U.L("none yet", "لا شيء بعد"))}</div></div><p class="empty t12">${U.L("No facade options yet · Send the concept deck to Claude in chat", "لا خيارات واجهة بعد · أرسل عرض التصميم إلى Claude في المحادثة")}</p>`;
-    else h += `<div class="tiles sys-opts" role="list" aria-label="${U.L("Exterior options", "خيارات الواجهة")}">${opts.map((o) => X.optTile(o, ch && ch.option)).join("")}</div>`;
+    else h += X.optTable(pid, opts, ch, ro);
     h += "</div>";
     // the materials board: name · use · unit, with the chosen option's share of the facade
     const shares = cur && cur.materials && typeof cur.materials === "object" ? cur.materials : {};
@@ -15858,22 +15888,8 @@ window.SL = window.SL || {};
     return r;
   };
   const optionOf = (d) => { const pid = ui.pid(), o = X.options(pid).find((x) => x.key === (d && d.opt)); if (!o) ui.toast(U.L("Option not found", "الخيار غير موجود")); return o; };
-  /** The option sheet (§4.4, a pick sheet): name, traits, the material shares as bursts, the views, "p. 8 ↗"; for a writer one footer
-   *  button, Choose this, which commits, toasts with Undo and closes. A viewer (or the chosen option) gets the sheet with no footer. */
-  A.sysOption = (d) => {
-    const pid = ui.pid(), o = optionOf(d); if (!o) return;
-    const ro = X.ro(), ch = X.chosen(pid), on = !!(ch && ch.option === o.key), board = X.board(pid, X.options(pid)), doc = o.drawingId ? (S().drawings || {})[o.drawingId] : null;
-    const traits = (U.isAr() && Array.isArray(o.traitsAr) && o.traitsAr.length ? o.traitsAr : Array.isArray(o.traits) ? o.traits : []);
-    const shares = o.materials && typeof o.materials === "object" ? Object.entries(o.materials).filter(([, v]) => U.num(v) > 0).sort((a, b) => U.num(b[1]) - U.num(a[1])) : [];
-    const pages = Array.isArray(o.pages) ? o.pages.map(U.num).filter((n) => n > 0) : [];
-    ui.sheet({
-      title: U.t(U.nm(o)) + (on ? " · " + U.L("Chosen ✓", "المختار ✓") : ""), state: {},
-      body: () => `<div class="bxs sys-sheet">${traits.length ? X.bx(U.L("Traits", "السمات"), `<span class="tgs">${traits.map((t) => `<span class="tg">${U.t(t)}</span>`).join("")}</span>`) : ""}${shares.map(([k, v]) => X.bx(X.matName(board, k), `<span class="num">${X.pct(v)}</span>`)).join("")}${Array.isArray(o.views) && o.views.length ? X.bx(U.L("Views", "اللقطات"), U.t(o.views.join(" · "))) : ""}${pages.length ? X.bx(U.L("Deck", "العرض"), pages.map((n) => X.deckLink(doc, n, o.assetId) || X.page(n)).join(" · ")) : ""}${on && ch.at ? X.bx(U.L("Chosen on", "اختير في"), U.esc(U.dDM(ch.at))) : ""}</div>`,
-      foot: () => (ro || on ? "" : `<button class="btn" data-act="choose">${U.L("Choose this", "اختر هذا")}</button>`),
-      acts: { choose: async (ds, el, ev, sh) => { if (X.ro()) return; sh.busy(true); const r = await X.choose(pid, o); sh.busy(false); if (!r || !r.ok) return sh.error(SL.store.errText(r)); sh.close(true); } },
-    });
-  };
-  /** Copy as checklist: the rows as text (item · ~qty unit · fix · basis, no price column), a Copy button with the select-and-copy fallback. */
+  /** Choose on an option's row: commits at once, toast with Undo (no sheet). */
+  A.sysChoose = async (d) => { if (X.ro()) return; const o = optionOf(d); if (o) await X.choose(ui.pid(), o); };
   A.sysCopy = (d) => {
     if (X.ro()) return;
     const pid = ui.pid(), key = d && d.key; if (!key) return;
