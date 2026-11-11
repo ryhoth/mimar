@@ -559,7 +559,11 @@ main.view{padding-top:var(--s5);display:flex;flex-direction:column;gap:var(--gap
   body.desk .rail button.on{background:var(--sunk);color:var(--ink)}
   body.desk .rail button.rail-p{padding-inline-start:22px}
   body.desk .rail .sep{height:1px;background:var(--line);margin:8px 4px}
-  body.desk .rail .rail-grp{padding:10px 10px 2px;color:var(--ink-3)}
+  /* a group header outranks the entries under it: bigger, heavier, full ink; the entries sit indented below (Ryan, 11 Nov 2026) */
+  body.desk .rail .rail-grp{padding:14px 10px 4px;color:var(--ink);font-size:var(--t-16);font-weight:800;letter-spacing:.04em}
+  body.desk .rail .rail-grp~button:not(.rail-p){font-size:var(--t-14);font-weight:500;padding-inline-start:22px}
+  body.desk .rail .rail-fig{color:var(--ink-3);font-weight:500;white-space:nowrap}
+  body.desk .rail .rail-fig .num{color:var(--ink-2);font-weight:700}
   body.desk .rail .meter{margin-top:auto;padding:8px 10px;font-size:var(--t-12);color:var(--ink-2)}
   body.desk .tabs{display:none}
   body.desk .rrail{display:flex;flex-direction:column;gap:12px;width:320px;position:sticky;top:0;height:100vh;overflow-y:auto;padding:12px;border-inline-start:1px solid var(--line)}
@@ -3173,6 +3177,16 @@ html[dir=rtl] .mo-in-next{animation-name:mo-from-start} html[dir=rtl] .mo-in-pre
 
 /* ---------- reduced motion: no echo, slide or fade (the JS adds none either); the edited cells' yellow flash stays ---------- */
 @media (prefers-reduced-motion:reduce){.digits button.mo-press,.digits button.on.mo-press,.mo-in-next,.mo-in-prev,html[dir=rtl] .mo-in-next,html[dir=rtl] .mo-in-prev,.mo-fade{animation:none}}
+
+/* ---- 85-headers.css ---- */
+/* Blatant rule (Ryan, 11 Nov 2026): a header that cannot be tapped outranks the tappable rows under it. */
+.sech h2,.sech h3,.v-bal .bl-rh h3,.v-timeline .tl-h,.rv-h{font-size:var(--t-16);font-weight:800;letter-spacing:.04em;color:var(--ink)}
+.v-timeline .tl-gh,.v-audit .au-grp .au-nm,.v-eqa .eq-grp .au-nm{font-size:var(--t-13);font-weight:800;color:var(--ink)}
+.v-bal .bl tr.bl-day td,.v-bal .bl tr.bl-day th{font-size:var(--t-12);font-weight:800;color:var(--ink)}
+.sech{border-bottom:2px solid var(--ink)}
+/* Acronyms (28-abbr.js): written out once per block, letters + hover after that. */
+abbr.ab{text-decoration:none;cursor:help}
+abbr.ab:not(.ab-full){border-bottom:1px dotted var(--ink-3)}
 
 </style>
 <nav class="rail" id="rail" aria-label="Sections"></nav>
@@ -6991,10 +7005,25 @@ window.SL = window.SL || {};
     for (const p of M.projects()) if (p.status !== "done" || p.id === pid) h += `<button class="rail-p${p.id === pid && name !== "projects" ? " on" : ""}" data-go="#${p.id}~${name === "projects" || p.id !== pid ? M.homeRoute(p, ro) : name}"><span>${U.t(U.nm(p))}</span></button>`;
     h += '<div class="sep"></div>';
     const fc = ui.flagCounts(pid);
+    // what is behind each entry, on the entry itself (Blatant: nothing to open just to learn a count)
+    const live = (c, f) => Object.values(S()[c] || {}).filter((d) => d && !d.void && M.pidOf(d) === pid && (!f || f(d))).length;
+    const figOf = (k) => {
+      try {
+        if (k === "design") return live("drawings");
+        if (k === "plans") return ui.planSets(pid).reduce((a, d) => { const q = d.planReview.points || {}; return a + (+q.design || 0) + (+q.economic || 0) + (+q.technical || 0); }, 0);
+        if (k === "boq") { const b = SL.boq && SL.boq.current(pid); return b ? SL.boq.lines(b.id).length : 0; }
+        if (k === "bids") return live("quotes", (q) => (q.status || "open") === "open");
+        if (k === "balances") { const o = U.num(M.projectTotals(pid, ui.D()).owed); return o > 0 ? U.mw(U.sar(o)) : 0; }
+        if (k === "ledger") return live("costs");
+        if (k === "inbox") return inboxCount();
+      } catch (e) { /* a figure is a courtesy: never break the rail */ }
+      return 0;
+    };
+    const FIG_L = { design: L("sets", "مجموعات"), plans: L("points", "ملاحظة"), boq: L("lines", "بند"), bids: L("open", "مفتوح"), balances: L("owed", "مستحق"), ledger: L("costs", "تكلفة"), inbox: L("to read", "للقراءة") };
     let grp = "";
     for (const [k, l, g] of items) {
       if (pre && !ro && g && g !== grp) { grp = g; h += '<div class="lbl rail-grp">' + GRP[g] + "</div>"; }
-      h += `<button class="${name === k || (TAB_OF[name] === k && !items.some(([x]) => x === name)) ? "on" : ""}" data-go="${k === "plans" ? ui.plansHref() : ui.href(k)}"><span>${l}</span>${k === "flags" && fc.stop + fc.check ? '<span class="t12">' + (fc.stop ? '<span class="c-stop">▲' + fc.stop + "</span> " : "") + (fc.check ? '<span class="c-warn">△' + fc.check + "</span>" : "") + "</span>" : ""}</button>`;
+      h += `<button class="${name === k || (TAB_OF[name] === k && !items.some(([x]) => x === name)) ? "on" : ""}" data-go="${k === "plans" ? ui.plansHref() : ui.href(k)}"><span>${l}</span>${(() => { const v = figOf(k); return v ? `<span class="t12 rail-fig"><span class="num">${v}</span> ${FIG_L[k]}</span>` : ""; })()}${k === "flags" && fc.stop + fc.check ? '<span class="t12">' + (fc.stop ? '<span class="c-stop">▲' + fc.stop + "</span> " : "") + (fc.check ? '<span class="c-warn">△' + fc.check + "</span>" : "") + "</span>" : ""}</button>`;
     }
     if (!ro) h += '<div class="sep"></div><button data-act="add"><span>' + L("+ Add", "+ إضافة") + "</span></button>";
     const n = SL.store.docCount();
@@ -7898,6 +7927,108 @@ window.SL = window.SL || {};
    *  out after 20 s). A day still in flight marks itself when it lands. */
   mo.cellDone = (sh) => { for (const k of sh._moDays || []) if (!days.has(k)) mo.mark(k); };
 })(window.SL);
+
+/* ---- 28-abbr.js ---- */
+/* ---- Acronyms spelled out (Ryan, 11 Nov 2026): "Spell Out (NWC)", never a bare acronym. ----
+   One glossary; every text the app shows (its own strings and the data: plan reviews, notes, lines) passes through it.
+   The first use in a line or row is written out "National Water Company (NWC)"; later uses in the same
+   line keep the letters with the words on hover. Tight places (tab bar, column headers, pills) keep the letters + hover. */
+(function () {
+  const SL = window.SL, U = SL.util;
+  const G = {
+    NWC: ["National Water Company", "شركة المياه الوطنية"],
+    SEC: ["Saudi Electricity Company", "الشركة السعودية للكهرباء"],
+    SCECO: ["Saudi Electricity Company, old name", "الشركة السعودية للكهرباء، الاسم القديم"],
+    SBC: ["Saudi Building Code", "كود البناء السعودي"],
+    ZATCA: ["Zakat, Tax and Customs Authority", "هيئة الزكاة والضريبة والجمارك"],
+    MEP: ["Mechanical, electrical and plumbing", "الميكانيكا والكهرباء والسباكة"],
+    HVAC: ["Heating, ventilation and air conditioning", "التدفئة والتهوية والتكييف"],
+    BOQ: ["Bill of quantities", "جدول الكميات"],
+    MDP: ["Main distribution panel", "لوحة التوزيع الرئيسية"],
+    DP: ["Distribution panel", "لوحة توزيع"],
+    DB: ["Distribution board", "لوحة توزيع"],
+    MCB: ["Miniature circuit breaker", "قاطع كهربائي صغير"],
+    RCD: ["Earth-leakage breaker", "قاطع التسرب الأرضي"],
+    SLD: ["Single-line diagram", "مخطط الخط الواحد"],
+    DWG: ["AutoCAD drawing file", "ملف رسم أوتوكاد"],
+    CAD: ["Computer drawing", "رسم بالحاسب"],
+    TR: ["Tons of refrigeration", "طن تبريد"],
+    BTU: ["British thermal units", "وحدة حرارية بريطانية"],
+    GPM: ["Gallons per minute", "جالون في الدقيقة"],
+    VRF: ["Variable refrigerant flow, one outdoor unit for many rooms", "تكييف مركزي بتدفق متغير"],
+    PPR: ["Polypropylene plastic pipe", "مواسير بولي بروبلين"],
+    UPVC: ["Rigid plastic", "بلاستيك صلب"],
+    CPVC: ["Hot-water plastic pipe", "مواسير بلاستيك للماء الحار"],
+    GRC: ["Glass-fibre reinforced concrete", "خرسانة مسلحة بالألياف الزجاجية"],
+    CCTV: ["Security cameras", "كاميرات المراقبة"],
+    NVR: ["Camera recorder", "مسجل الكاميرات"],
+    EV: ["Electric vehicle", "سيارة كهربائية"],
+    GC: ["General contractor", "المقاول العام"],
+    GV: ["Gate valve", "محبس بوابة"],
+    GFL: ["Ground floor level", "منسوب الدور الأرضي"],
+    STC: ["Saudi Telecom Company", "شركة الاتصالات السعودية"],
+  };
+  const KEYS = Object.keys(G).sort((a, b) => b.length - a.length);
+  // Not inside a tag or code ("DP-01", "MDP-02/FF", "'SEC'"), and not when the text already spells it: "… Code (SBC)".
+  const RE = new RegExp("(^|[^A-Za-z0-9(/'\"‘’“”_-])(" + KEYS.join("|") + "|uPVC)(s?)(?![A-Za-z0-9/'\"’”_-])", "g");
+  const QUICK = new RegExp("(?:" + KEYS.join("|") + "|uPVC)");
+  const SKIP = "script,style,textarea,input,select,option,svg,canvas,abbr,code,pre,[contenteditable],.num,.smono,.noabbr";
+  const TIGHT = ".tabs,th,.pill,.rv-rail,.rv-segs,.pos,.strip,.tgs,.rail-p";
+  const BLOCK = "li,p,td,dd,dt,button,a,h1,h2,h3,h4,label,div,section,figure"; // the nearest line or row: every row says it in full
+  const words = (k) => { const g = G[k === "uPVC" ? "UPVC" : k]; return g ? (U.isAr() ? g[1] : g[0]) : ""; };
+
+  function fix(node) {
+    const txt = node.nodeValue;
+    if (!txt || txt.length < 2 || !QUICK.test(txt)) return;
+    const par = node.parentElement;
+    if (!par || par.closest(SKIP)) return;
+    RE.lastIndex = 0;
+    let m, last = 0, frag = null;
+    const tight = !!par.closest(TIGHT), block = par.closest(BLOCK) || document.body;
+    while ((m = RE.exec(txt))) {
+      const k = m[2], w = words(k);
+      if (!w) continue;
+      frag = frag || document.createDocumentFragment();
+      const at = m.index + m[1].length;
+      if (at > last) frag.appendChild(document.createTextNode(txt.slice(last, at)));
+      const el = document.createElement("abbr");
+      el.title = w; el.dataset.k = k;
+      const own = /^\s*\(/.test(txt.slice(m.index + m[0].length)); // "HVAC (air conditioning and fans)": the text explains it itself
+      const seen = tight || own || (block.querySelector('abbr.ab-full[data-k="' + k + '"]') || (frag.querySelector && frag.querySelector('abbr.ab-full[data-k="' + k + '"]')));
+      if (seen) { el.className = "ab"; el.textContent = k + m[3]; }
+      else { el.className = "ab ab-full"; el.textContent = w + (m[3] && !U.isAr() ? "s" : "") + " (" + k + m[3] + ")"; }
+      frag.appendChild(el);
+      last = at + k.length + m[3].length;
+    }
+    if (!frag) return;
+    if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+    par.replaceChild(frag, node);
+  }
+
+  function sweep(root) {
+    if (!root) return;
+    if (root.nodeType === 3) return fix(root);
+    if (root.nodeType !== 1 || (root.closest && root.closest(SKIP))) return;
+    const w = document.createTreeWalker(root, 4 /* text */), list = [];
+    while (w.nextNode()) list.push(w.currentNode);
+    for (const n of list) if (n.parentNode) fix(n);
+  }
+
+  SL.abbr = { G, sweep, words };
+  function start() {
+    sweep(document.body);
+    if (typeof MutationObserver === "undefined") return;
+    const mo = new MutationObserver((recs) => {
+      for (const r of recs) {
+        if (r.type === "characterData") sweep(r.target);
+        else for (const n of r.addedNodes) if (n.isConnected) sweep(n);
+      }
+      mo.takeRecords();
+    });
+    mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  if (document.body) start(); else document.addEventListener("DOMContentLoaded", start);
+})();
 
 /* ---- 30-today.js ---- */
 /* 30-today.js — Today (#today[.date]) and Week (#week[.sat]) views, the cell sheet, the crew sheet,
@@ -9842,7 +9973,7 @@ window.SL = window.SL || {};
   X.moneyStrip = (pid, D) => {
     const t = M.projectTotals(pid, D), p = M.project(pid) || {};
     const committed = M.committed(pid).total || 0;
-    const open = ui.isOpen("prj.ident", false);
+    const open = ui.isOpen("prj.ident", true);
     return `<div class="sec v-prj-strip">
       <button type="button" class="v-prj-hero" data-act="toggle" data-k="prj.ident" aria-expanded="${open}" aria-label="${U.L("Cost to date; tap for the identity", "التكلفة حتى اليوم؛ اضغط للتفصيل")}">
         <span class="lbl">${U.L("Cost to date · SAR", "التكلفة حتى اليوم · ر.س")}</span><span class="t28 num">${ui.m(t.cost)}</span></button>
@@ -9924,7 +10055,7 @@ window.SL = window.SL || {};
       const list = jobs.filter((j) => M.jobStatus(j) === st);
       const label = X.stLabel(st);
       if (!list.length) { empties.push(`${U.esc(label)} <span class="num">0</span>`); continue; }
-      const tot = U.sum(list, (j) => tOf(j.id).cost), k = "prj.grp." + st, open = ui.isOpen(k, st !== "done");
+      const tot = U.sum(list, (j) => tOf(j.id).cost), k = "prj.grp." + st, open = ui.isOpen(k, true);
       h += `<button type="button" class="v-prj-grp" data-act="toggle" data-k="${k}" aria-expanded="${open}"><span class="lbl">${open ? "▾" : U.L("▸", "◂")} ${U.esc(label)} <span class="num">(${list.length})</span></span><span class="num">${ui.mw(tot)}</span></button>`;
       if (open) h += list.map((j) => X.jobRow(j, tOf(j.id), D, scale, comm[j.id] || 0)).join("");
     }
@@ -9993,7 +10124,7 @@ window.SL = window.SL || {};
   };
 
   X.jobStrip = (j, pid, D, t) => {
-    const comm = (M.committed(pid).byJob || {})[j.id] || 0, k = "job.ident." + j.id, open = ui.isOpen(k, false);
+    const comm = (M.committed(pid).byJob || {})[j.id] || 0, k = "job.ident." + j.id, open = ui.isOpen(k, true);
     return `<div class="sec v-prj-strip v-job-strip">
       <button type="button" class="v-prj-hero" data-act="toggle" data-k="${U.esc(k)}" aria-expanded="${open}" aria-label="${U.L("Cost to date; tap for the identity", "التكلفة حتى اليوم؛ اضغط للتفصيل")}">
         <span class="lbl">${U.L("Cost to date · SAR", "التكلفة حتى اليوم · ر.س")}</span><span class="t20 num">${ui.m(t.cost)}</span></button>
@@ -11281,7 +11412,7 @@ window.SL = window.SL || {};
     const name = j ? (code ? '<b class="tl-code">' + U.esc(code) + "</b> " : "") + U.t(jn) : '<span class="c-warn">⊘ ' + jn + "</span>";
     const sw = j && SL.sched ? SL.sched.words(j, D) : []; // "after PL · now looks like Sun 28 Dec · 10 days late · spare 4 d" (scheduled projects only)
     const whenH = '<span class="' + when.cls + '">' + U.esc(when.txt) + "</span>" + (sw.length ? " · " + sw.join(" · ") : "");
-    const k = "tl.r." + (jid || "_none"), open = !opts.compact && rentals.length && ui.isOpen(k, false);
+    const k = "tl.r." + (jid || "_none"), open = !opts.compact && rentals.length && ui.isOpen(k, true);
     const budget = j && U.num(j.budget) > 0 ? U.hal(j.budget) : 0;
     const over = budget && t && t.cost > budget;
     const o = {
@@ -13015,7 +13146,7 @@ window.SL = window.SL || {};
     if (!ro) h += `<button type="button" class="btn sm sec" data-act="eqDepAdd">${U.L("+ Deposit", "+ تأمين")}</button>`;
     h += "</div>" + held.map((d) => X.depRow(d, ro)).join("");
     if (done.length) {
-      const open = ui.isOpen("eq.depDone", false);
+      const open = ui.isOpen("eq.depDone", true);
       h += `<button type="button" class="lnk eq-dep-more t12" data-act="toggle" data-k="eq.depDone" aria-expanded="${open}">${open ? U.L("Hide returned", "إخفاء المُرجعة") : U.L("Returned", "المُرجعة") + " (" + done.length + ")"}</button>`;
       if (open) h += done.map((d) => X.depRow(d, ro)).join("");
     }
@@ -13296,7 +13427,7 @@ window.SL = window.SL || {};
   };
 
   X.card = (i) => {
-    const u = i.u, k = "ia:" + u.key, open = ui.isOpen(k, false);
+    const u = i.u, k = "ia:" + u.key, open = ui.isOpen(k, true);
     const kind = u.doc.doc && u.doc.doc.kind;
     return `<div class="ia-card${open ? " open" : ""}${i.up ? " up" : ""}"${ui.mo(u.key)}>` +
       `<button type="button" class="ia-head" data-act="toggle" data-k="${U.esc(k)}" aria-expanded="${open}"><span class="ia-t">${kind ? ui.kindPill(kind) + " " : ""}${U.isAr() ? '<span class="ia-tt" dir="auto">' + U.t(u.title) + "</span>" : U.t(u.title)}</span><span class="ia-amt num">${U.m(i.total / 100)}</span>` +
@@ -13307,7 +13438,7 @@ window.SL = window.SL || {};
   X.watchBlock = (pid, T) => {
     let rows = [];
     try { rows = X.watch(pid, T); } catch (e) { console.warn("[invaudit] price watch", e); return ""; }
-    const all = ui.isOpen("ia.watchAll", false), shown = all ? rows : rows.slice(0, 8), last = X.lastCheck();
+    const all = ui.isOpen("ia.watchAll", true), shown = all ? rows : rows.slice(0, 8), last = X.lastCheck();
     if (!rows.length) return "";
     const strip = (r) => {
       const ps = r.obs.slice(-12).map((o) => o.price), mn = Math.min(...ps, r.mref || Infinity), mx = Math.max(...ps, r.mref || 0), sp = mx - mn || 1;
@@ -13983,7 +14114,7 @@ window.SL = window.SL || {};
     const mkt = cmp.mref ? `<span class="${X.pcls(cmp.vsMarket)}">${X.pct(cmp.vsMarket)}</span> <small>${U.L("market ~", "السوق ~")}${X.rate(cmp.mref)}</small>` : cmp.market && !cmp.sameUnit ? '<small class="c-warn">' + U.L("market is per " + U.unit(cmp.market.unit) + ": not compared", "السوق لكل " + U.unit(cmp.market.unit) + ": لا مقارنة") + "</small>" : '<small class="muted">' + U.L("no market price", "لا سعر سوق") + "</small>";
     const src = cmp.market && Array.isArray(cmp.market.sources) ? cmp.market.sources.map((x) => (typeof x === "string" ? { url: x, title: x } : x)).filter((x) => x && typeof x === "object") : [];
     h += `<div class="sec bq-price">${ui.sech(U.L("Price check", "فحص السعر"), cmp.checkedAt ? U.L("checked ", "فُحص ") + U.esc(U.dDM(String(cmp.checkedAt).slice(0, 10))) : null)}<div class="kv bq-kv">${kv(U.L("vs what we usually pay", "مقابل ما ندفعه عادة"), usual)}${kv(U.L("vs the market", "مقابل السوق"), mkt)}</div>` +
-      (src.length ? `<details class="bq-src"><summary class="t13">${U.L("Sources", "المصادر")} · ${src.length}</summary><ul class="t12">${src.map((x) => `<li>${/^https?:\/\//.test(x.url || "") ? `<a href="${U.esc(x.url)}" target="_blank" rel="noopener noreferrer">${U.t(x.title || x.url)}</a>` : U.t(x.title || "")}${x.price ? ' <span class="muted">· ' + U.t(String(x.price)) + "</span>" : ""}</li>`).join("")}</ul></details>` : "") +
+      (src.length ? `<details class="bq-src" open><summary class="t13">${U.L("Sources", "المصادر")} · ${src.length}</summary><ul class="t12">${src.map((x) => `<li>${/^https?:\/\//.test(x.url || "") ? `<a href="${U.esc(x.url)}" target="_blank" rel="noopener noreferrer">${U.t(x.title || x.url)}</a>` : U.t(x.title || "")}${x.price ? ' <span class="muted">· ' + U.t(String(x.price)) + "</span>" : ""}</li>`).join("")}</ul></details>` : "") +
       `<p class="t12 muted">${U.L("A comparison only: the budget is the file's figure.", "للمقارنة فقط: الميزانية هي رقم الملف.")}</p></div>`;
     // bought so far: invoices (tap opens), deliveries not yet invoiced, on the way; then what is still on order and left
     const rows = [];
@@ -14400,7 +14531,7 @@ window.SL = window.SL || {};
   X.paidWeek = (pid, T, ro) => {
     const rows = X.paidThisWeek(pid, T), tot = U.sum(rows, (r) => r.p.h);
     const fl = rows.filter((r) => X.isFloat(r.p.walletId)), ow = rows.filter((r) => !X.isFloat(r.p.walletId));
-    const open = ui.isOpen("pay.paid", false);
+    const open = ui.isOpen("pay.paid", true);
     let h = '<section class="sec pay-paid" id="pay-paid">' + ui.sech(U.L("Paid this week", "المدفوع هذا الأسبوع"), tot ? U.m(tot / 100) : '<span class="zero">–</span>');
     const back = X.backRows(pid, T);
     if (!rows.length && back) return h + back + "</section>"; // only money back this week (a deposit returned)
@@ -15115,7 +15246,7 @@ window.SL = window.SL || {};
   X.subRow = subRow;
 
   function line(k, letter, sign, label, h, rows, extra) {
-    const open = ui.isOpen(k, false), n = rows.length;
+    const open = ui.isOpen(k, true), n = rows.length;
     const tail = n ? " · " + X.nLines(n) : "";
     return `<div class="v-st-line${open ? " open" : ""}${h ? "" : " nil"}">
       <button class="v-st-lh" data-act="toggle" data-k="${U.esc(k)}" aria-expanded="${open}" ${n ? "" : "disabled"}>
@@ -18874,7 +19005,7 @@ window.SL = window.SL || {};
           (dp != null ? `<span>${U.L("Our last price", "آخر سعر دفعناه")}</span><span class="v num">${U.m(last.price)} <span class="${dp > 0.25 ? "c-stop" : dp > 0.1 ? "c-warn" : dp < -0.1 ? "c-info" : "muted"}">${U.ltr((dp > 0 ? "+" : dp < 0 ? "−" : "") + Math.abs(Math.round(dp * 100)) + "%")}</span></span>` : "") + "</div>" +
           (!sameU ? `<p class="t12 c-warn">${U.L(`Market is per ${U.esc(mk.unit)}, we buy per ${U.esc(s.unit)}: not compared.`, `السوق لكل ${U.esc(X.unitTxt(mk.unit))}، ونحن نشتري لكل ${U.esc(X.unitTxt(s.unit))}: لا مقارنة.`)}</p>` : "") +
           (() => { const src = (Array.isArray(mk.sources) ? mk.sources : []).map((x) => (typeof x === "string" ? { url: x, title: x } : x)).filter((x) => x && typeof x === "object"); if (!mk.note && !src.length) return "";
-            return `<details class="dv-mkd"><summary class="t13">${U.L("Where these prices come from", "من أين هذه الأسعار")}${src.length ? " · " + U.L(src.length + " source" + (src.length > 1 ? "s" : ""), U.plAr(src.length, "مصدر واحد", "مصدران", "مصادر", "مصدراً")) : ""}</summary>` +
+            return `<details class="dv-mkd" open><summary class="t13">${U.L("Where these prices come from", "من أين هذه الأسعار")}${src.length ? " · " + U.L(src.length + " source" + (src.length > 1 ? "s" : ""), U.plAr(src.length, "مصدر واحد", "مصدران", "مصادر", "مصدراً")) : ""}</summary>` +
               (mk.note ? `<p class="t12 muted">${U.t(mk.note)}</p>` : "") +
               (src.length ? '<ul class="dv-src">' + src.map((x) => `<li>${/^https?:\/\//.test(x.url || "") ? `<a href="${U.esc(x.url)}" target="_blank" rel="noopener noreferrer">${U.t(x.title || x.url)}</a>` : U.t(x.title || "")}${x.price ? ' <span class="muted">· ' + U.t(String(x.price)) + "</span>" : ""}</li>`).join("") + "</ul>" : "") + "</details>"; })() +
           '<p class="t12 muted">' + U.L("Web check by Claude Code. Ask it “check market prices” to refresh.", "فحص من الإنترنت بواسطة Claude Code. اطلب منه «افحص أسعار السوق» للتحديث.") + "</p></div>";
@@ -19042,7 +19173,7 @@ window.SL = window.SL || {};
         const list = groups[k];
         if (!list.length && k !== "done") continue;
         if (k === "done") {
-          const open = ui.isOpen("adm.done", false);
+          const open = ui.isOpen("adm.done", true);
           h += `<div class="sec"><button class="row nosw tap v-projects-done" data-act="toggle" data-k="adm.done" aria-expanded="${open}"><span class="t">${NAMES.done} (${list.length})</span><span class="a">${open ? "▾" : X.fwd()}</span><span class="f"></span></button>` +
             (open ? list.map((p) => projRow(p, D, scale)).join("") || '<div class="empty t12">' + U.L("No finished projects.", "لا مشاريع مكتملة.") + "</div>" : "") + "</div>";
           continue;
