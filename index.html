@@ -266,7 +266,7 @@ img{max-width:100%}[hidden]{display:none!important}
   const markPin = (email) => { try { localStorage.setItem(pinKey(email), "1"); } catch (e) {} };
   async function showSignIn(note, cls) {
     let lastEmail = ""; try { lastEmail = localStorage.getItem("sl.lastEmail") || ""; } catch (e) {}
-    await gate(`<h1>Mimar</h1><p>Sign in with your email and PIN.</p>
+    await gate(`<img src="apple-touch-icon.png" width="64" height="64" alt="" style="border-radius:14px"><h1>Mimar</h1><p>Sign in with your email and PIN.</p>
       <form id="sl-auth-form" novalidate><input id="sl-auth-email" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com" value="${esc(lastEmail)}" aria-label="Email" required>
       <div style="height:10px"></div><input id="sl-auth-pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" placeholder="PIN" aria-label="PIN">
       <div style="height:10px"></div><button type="submit" id="sl-auth-go">Sign in</button></form>
@@ -3187,6 +3187,9 @@ html[dir=rtl] .mo-in-next{animation-name:mo-from-start} html[dir=rtl] .mo-in-pre
 /* Acronyms (28-abbr.js): written out once per block, letters + hover after that. */
 abbr.ab{text-decoration:none;cursor:help}
 abbr.ab:not(.ab-full){border-bottom:1px dotted var(--ink-3)}
+
+/* logo */
+.brand{display:flex;align-items:center;gap:8px}.brand .logo{flex:none;border-radius:6px;object-fit:cover;box-shadow:0 0 0 1px var(--line-2)}
 
 </style>
 <nav class="rail" id="rail" aria-label="Sections"></nav>
@@ -6848,13 +6851,13 @@ window.SL = window.SL || {};
     if (s.ready || s.noRuntime) view.removeAttribute("aria-busy"); else view.setAttribute("aria-busy", "true");
     chromeLabels();
     if (s.noRuntime) {
-      document.getElementById("hdr").innerHTML = '<span class="pname"><span>' + U.L("Mimar", "معمار") + "</span></span>";
+      document.getElementById("hdr").innerHTML = ui.brand();
       view.innerHTML = '<div class="fullpage"><div><div class="title">' + U.L("Open this ledger inside Claude to load and save entries.", "افتح هذا الدفتر داخل Claude لتحميل القيود وحفظها.") + '</div><p class="t12">' + U.L("The ledger lives in your claude.ai artifact. Opened as a plain file it has no data.", "الدفتر محفوظ في صفحتك على claude.ai. إذا فُتح كملف عادي فلا توجد فيه بيانات.") + "</p></div></div>";
       ["tabs", "strips", "rail", "rrail"].forEach((id) => (document.getElementById(id).innerHTML = ""));
       return;
     }
     if (!s.ready) {
-      document.getElementById("hdr").innerHTML = '<span class="pname"><span>' + U.L("Mimar", "معمار") + "</span></span>";
+      document.getElementById("hdr").innerHTML = ui.brand();
       view.innerHTML = Array.from({ length: 7 }, (_, i) => '<div class="skel" aria-hidden="true"' + (SL.motion && SL.motion.skel ? SL.motion.skel(i) : "") + "></div>").join("") + (Date.now() - (ui.bootAt || 0) > 800 ? '<p class="t12 muted">' + U.L("Loading ledger…", "جارٍ تحميل الدفتر…") + "</p>" : "");
       return;
     }
@@ -6887,7 +6890,7 @@ window.SL = window.SL || {};
 
   /* ================= chrome ================= */
   function headerRoot() {
-    return '<span class="pname"><span>' + U.L("Mimar", "معمار") + '</span></span><span class="spacer"></span>' + ui.langBtn() + (ui.readOnlyUI() ? "" : '<button class="more" data-act="menu" aria-label="' + U.L("More", "المزيد") + '">⋯</button>');
+    return ui.brand() + '<span class="spacer"></span>' + ui.langBtn() + (ui.readOnlyUI() ? "" : '<button class="more" data-act="menu" aria-label="' + U.L("More", "المزيد") + '">⋯</button>');
   }
   function header(pid) {
     const p = M.project(pid) || { name: U.L("Project", "المشروع") };
@@ -6915,6 +6918,11 @@ window.SL = window.SL || {};
   function holderOf(w) { return (U.isAr() && w.holderAr) || w.holder || w.name; }
   ui.holderOf = holderOf;
   /** EN ⇄ عربي switch (header, menu, settings). Remembered per viewer; the whole page flips right-to-left in Arabic. */
+  // The logo (Ryan, 11 Nov 2026): an M in gold on a dark tile, after Mimar Sinan: the stems are two minarets with pointed caps, the middle hangs like the curves under a dome.
+  /* The mark: the Ottoman miniature of an architect with his measuring rod (Ryan, 11 Nov 2026), a 96 px crop kept inline. */
+  ui.logoSrc = "data:image/jpeg;base64,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";
+  ui.logo = (px) => '<img class="logo" src="' + ui.logoSrc + '" width="' + (px || 24) + '" height="' + (px || 24) + '" alt="" aria-hidden="true">';
+  ui.brand = () => '<span class="pname brand">' + ui.logo(26) + "<span>" + U.L("Mimar", "معمار") + "</span></span>";
   ui.langBtn = () => (U.isAr()
     ? '<button class="chip-lang" data-act="setLang" data-val="en" lang="en" aria-label="Switch to English">EN</button>'
     : '<button class="chip-lang" data-act="setLang" data-val="ar" lang="ar" aria-label="التبديل إلى العربية">عربي</button>');
@@ -6999,7 +7007,7 @@ window.SL = window.SL || {};
     const items = ro ? (pre ? [["report", L("Report", "التقرير")], ["design", L("Design", "التصميم")], ["boq", L("BOQ", "جدول الكميات")], ["bids", L("Bids", "العطاءات")]] : [["report", L("Report", "التقرير")], ["project", L("Jobs", "البنود")], ["timeline", L("Timeline", "الجدول الزمني")], ["ledger", L("Ledger", "الدفتر")]])
       : pre ? pre1.concat(build, more) : build.concat(more);
     const GRP = { design: L("Design", "التصميم"), buy: L("Buy", "الشراء"), build: L("Build", "التنفيذ"), more: L("More", "المزيد") };
-    let h = '<div class="lbl" style="padding:4px 10px 8px">' + L("Mimar", "معمار") + "</div>";
+    let h = '<div class="lbl brand" style="padding:4px 10px 8px">' + ui.logo(22) + "<span>" + L("Mimar", "معمار") + "</span></div>";
     // general above specific: All projects, then each project (each lands on its own home: Design, BOQ or Balances)
     h += `<button class="${name === "projects" ? "on" : ""}" data-go="#projects"><span>${L("All projects", "كل المشاريع")}</span></button>`;
     for (const p of M.projects()) if (p.status !== "done" || p.id === pid) h += `<button class="rail-p${p.id === pid && name !== "projects" ? " on" : ""}" data-go="#${p.id}~${name === "projects" || p.id !== pid ? M.homeRoute(p, ro) : name}"><span>${U.t(U.nm(p))}</span></button>`;
@@ -16126,7 +16134,7 @@ window.SL = window.SL || {};
  * change when the page flips. The data is drawings/<id>.planReview: a small summary on the doc ({v, at, by, asset, imgs,
  * title, pages, points, gaps}) plus the review file in the receipts bucket (asset id, fetched once per session) or inline
  * (`data`, dev seed and tests). Claude Code writes it (skill mimar-plan-review); the app never calls Claude. The review text
- * is English as written (lang="en"); the chrome goes through U.L. Take-off figures are counts read off drawings, never money. */
+ * is written in English; the file's `ar` map {english: arabic} gives each string in Arabic (X.tr), English where it has none; the chrome goes through U.L. Take-off figures are counts read off drawings, never money. */
 (function (SL) {
   "use strict";
   const U = SL.util, M = SL.model, ui = SL.ui, A = SL.actions;
@@ -16146,7 +16154,12 @@ window.SL = window.SL || {};
   X.floorWord = (k) => (SL._systems && SL._systems.floor ? SL._systems.floor(k) : U.esc(k));
   /** A page's title: the floor for a plan, else cover / index / the section's divider. */
   X.pageTitle = (p, sec) => p.kind === "plan" && p.floor ? X.floorWord(p.floor) : p.kind === "cover" ? U.L("Cover", "الغلاف") : p.kind === "index" ? U.L("Drawing index", "فهرس اللوحات") : p.kind === "divider" ? U.L("Section", "القسم") + " " + U.esc((sec && sec.no) || "") : `<span lang="en">${U.esc(p.title || "")}</span>`;
-  const en = (s) => `<span lang="en" dir="auto">${U.esc(s == null ? "" : s)}</span>`;
+  /** The review's own text in the viewer's language: the review file carries `ar` {english: arabic}; a string with no Arabic stays English. */
+  X.dict = X.dict || {};
+  X.has = (s) => !!(s && U.isAr() && X.dict[s]);
+  X.tr = (s) => (s == null ? "" : X.has(s) ? X.dict[s] : s);
+  X.pc = () => (U.isAr() && X.dictN ? 'lang="ar" dir="rtl"' : 'lang="en" dir="ltr"');
+  const en = (s) => `<span lang="${X.has(s) ? "ar" : "en"}" dir="auto">${U.esc(X.tr(s))}</span>`;
   const fmt = (n) => (n == null || n === "" ? "?" : X.num(n));
   X.num = (n) => { n = Number(n); return !isFinite(n) ? "?" : Number.isInteger(n) ? U.mw(n) : String(Math.round(n * 10) / 10); };
 
@@ -16192,7 +16205,7 @@ window.SL = window.SL || {};
   };
   X.legend = (p) => {
     const lg = p.legend || [], B = BASIS();
-    return lg.length ? `<div class="rv-lg prose" lang="en" dir="ltr">${lg.map((li) => `<div class="rv-li">${X.swatch(li, p)}<div><b>${U.esc(li.label)}</b><span>${U.esc(li.meaning)}</span>${li.basis ? `<em class="${li.basis === "unknown" ? "unk" : ""}" lang="${U.isAr() ? "ar" : "en"}" dir="auto">${B[li.basis] || U.esc(li.basis)}${li.page ? " · " + U.L("p. ", "ص. ") + U.esc(li.page) : ""}</em>` : ""}</div></div>`).join("")}</div>` : empty(U.L("No symbols on this slide.", "لا رموز في هذه الشريحة."));
+    return lg.length ? `<div class="rv-lg prose" ${X.pc()}>${lg.map((li) => `<div class="rv-li">${X.swatch(li, p)}<div><b>${U.esc(X.tr(li.label))}</b><span>${U.esc(X.tr(li.meaning))}</span>${li.basis ? `<em class="${li.basis === "unknown" ? "unk" : ""}" lang="${U.isAr() ? "ar" : "en"}" dir="auto">${B[li.basis] || U.esc(li.basis)}${li.page ? " · " + U.L("p. ", "ص. ") + U.esc(li.page) : ""}</em>` : ""}</div></div>`).join("")}</div>` : empty(U.L("No symbols on this slide.", "لا رموز في هذه الشريحة."));
   };
   X.qty = (t) => (t.conf === "unclear" && t.low != null && t.high != null ? fmt(t.low) + "–" + fmt(t.high) : (t.conf === "estimated" ? "~" : "") + fmt(t.qty));
   X.prev = (t) => {
@@ -16202,18 +16215,18 @@ window.SL = window.SL || {};
   };
   X.takeoff = (p, since) => {
     const to = p.takeoff || [];
-    return to.length ? `<table class="rv-to"><thead><tr><th>${U.L("Item", "البند")}</th><th class="r">${U.L("Qty", "الكمية")}</th><th class="r">${since}</th></tr></thead><tbody>${to.map((t) => `<tr><td class="prose" lang="en" dir="ltr"><b>${U.esc(t.item)}</b>${t.how ? `<small>${U.esc(t.how)}</small>` : ""}</td><td class="r q num" dir="ltr">${X.qty(t)} <small>${U.esc(t.unit || "")}</small></td><td class="r num" dir="ltr">${X.prev(t)}</td></tr>`).join("")}</tbody></table>` : empty(U.L("Nothing to count on this slide.", "لا شيء للعد في هذه الشريحة."));
+    return to.length ? `<table class="rv-to"><thead><tr><th>${U.L("Item", "البند")}</th><th class="r">${U.L("Qty", "الكمية")}</th><th class="r">${since}</th></tr></thead><tbody>${to.map((t) => `<tr><td class="prose" ${X.pc()}><b>${U.esc(X.tr(t.item))}</b>${t.how ? `<small>${U.esc(X.tr(t.how))}</small>` : ""}</td><td class="r q num" dir="ltr">${X.qty(t)} <small>${U.esc(X.tr(t.unit || ""))}</small></td><td class="r num" dir="ltr">${X.prev(t)}</td></tr>`).join("")}</tbody></table>` : empty(U.L("Nothing to count on this slide.", "لا شيء للعد في هذه الشريحة."));
   };
-  X.since = (p) => { const ch = p.since || []; return ch.length ? `<ul class="rv-chg prose" lang="en" dir="ltr">${ch.map((c) => `<li>${U.esc(c)}</li>`).join("")}</ul>` : empty(p.sinceNote ? en(p.sinceNote) : U.L("No earlier sheet to compare.", "لا لوحة سابقة للمقارنة.")); };
+  X.since = (p) => { const ch = p.since || []; return ch.length ? `<ul class="rv-chg prose" ${X.pc()}>${ch.map((c) => `<li>${U.esc(X.tr(c))}</li>`).join("")}</ul>` : empty(p.sinceNote ? en(p.sinceNote) : U.L("No earlier sheet to compare.", "لا لوحة سابقة للمقارنة.")); };
   /** One point: what Ryan says on the call, the evidence, then kind · impact · verdict · on plan · other pages. A point with a pin is a button (zooms the plan to it). */
   X.point = (t) => {
     const v = VERD()[t.verdict], tag = t.pin ? "button" : "div";
-    const chips = [t.kind ? `<span class="rv-chip k">${KIND()[t.kind] || U.esc(t.kind)}</span>` : "", t.impact ? `<span class="rv-chip info" lang="en">${U.esc(t.impact)}</span>` : "", v ? `<span class="rv-chip ${v[1]}">${v[0]}</span>` : "", t.pin ? `<span class="rv-chip">⌖ ${U.L("on plan", "على المخطط")}</span>` : "", (t.refs || []).length ? `<span class="rv-chip">${t.refs.map((r) => U.L("p. ", "ص. ") + U.esc(r)).join(" · ")}</span>` : ""].join("");
+    const chips = [t.kind ? `<span class="rv-chip k">${KIND()[t.kind] || U.esc(t.kind)}</span>` : "", t.impact ? `<span class="rv-chip info" lang="${X.has(t.impact) ? "ar" : "en"}">${U.esc(X.tr(t.impact))}</span>` : "", v ? `<span class="rv-chip ${v[1]}">${v[0]}</span>` : "", t.pin ? `<span class="rv-chip">⌖ ${U.L("on plan", "على المخطط")}</span>` : "", (t.refs || []).length ? `<span class="rv-chip">${t.refs.map((r) => U.L("p. ", "ص. ") + U.esc(r)).join(" · ")}</span>` : ""].join("");
     const src = (t.sources || []).filter((s) => s && /^https?:\/\//.test(s.url || "")).map((s) => `<a href="${U.esc(s.url)}" target="_blank" rel="noopener">${U.esc(s.title || s.url)}</a>`).join(" · ");
-    return `<${tag}${t.pin ? ' type="button" data-act="rvPt"' : ""} class="rv-pt ${U.esc(t.sev || "low")}" data-pt="${U.esc(t.id)}" aria-label="${U.esc(t.id)} · ${SEV()[t.sev] || ""}"><span class="s prose" lang="en" dir="ltr"><span class="id">${U.esc(t.id)}</span><span>${U.esc(t.say)}</span></span>${t.why ? `<span class="w prose" lang="en" dir="ltr">${U.esc(t.why)}</span>` : ""}<span class="m">${chips}</span>${src ? `<span class="src prose" lang="en">${src}</span>` : ""}</${tag}>`;
+    return `<${tag}${t.pin ? ' type="button" data-act="rvPt"' : ""} class="rv-pt ${U.esc(t.sev || "low")}" data-pt="${U.esc(t.id)}" aria-label="${U.esc(t.id)} · ${SEV()[t.sev] || ""}"><span class="s prose" ${X.pc()}><span class="id">${U.esc(t.id)}</span><span>${U.esc(X.tr(t.say))}</span></span>${t.why ? `<span class="w prose" ${X.pc()}>${U.esc(X.tr(t.why))}</span>` : ""}<span class="m">${chips}</span>${src ? `<span class="src prose" lang="en">${src}</span>` : ""}</${tag}>`;
   };
   X.lens = (p, key) => { const L = ((p.call || {})[key]) || []; return L.length ? L.map(X.point).join("") : empty(U.L("Nothing to raise on this page.", "لا شيء يُطرح في هذه الصفحة.")); };
-  X.dropped = (p) => { const dr = p.dropped || []; return dr.length ? `<ul class="rv-dl prose" lang="en" dir="ltr">${dr.map((x) => `<li><b>${U.esc(x.id)}</b><span><s>${U.esc(x.claim)}</s> ${U.esc(x.why)}</span></li>`).join("")}</ul>` : empty(U.L("Nothing dropped on this page.", "لا شيء مُستبعد في هذه الصفحة.")); };
+  X.dropped = (p) => { const dr = p.dropped || []; return dr.length ? `<ul class="rv-dl prose" ${X.pc()}>${dr.map((x) => `<li><b>${U.esc(x.id)}</b><span><s>${U.esc(X.tr(x.claim))}</s> ${U.esc(X.tr(x.why))}</span></li>`).join("")}</ul>` : empty(U.L("Nothing dropped on this page.", "لا شيء مُستبعد في هذه الصفحة.")); };
   /** A slot's header: title · count · an aside ("3 high"); the count lives in .num so a long list never moves the next slot. */
   X.head = (id, title, n, aside) => `<h3 class="rv-h"><span>${title}</span> <span class="num" id="${id}N">${n}</span><span class="aside" id="${id}A">${aside || ""}</span></h3>`;
   const hiTxt = (L) => { const n = (L || []).filter((t) => t.sev === "high").length; return n ? U.L(n + " high", n + " عالية") : ""; };
@@ -16269,7 +16282,7 @@ window.SL = window.SL || {};
     const img = url ? `<img src="${U.esc(url)}" alt="" draggable="false" loading="${near ? "eager" : "lazy"}" style="width:${((p.natW || cw) / cw * 100).toFixed(3)}%;height:${((p.natH || ch) / ch * 100).toFixed(3)}%;left:${(-c[0] / cw * 100).toFixed(3)}%;top:${(-c[1] / ch * 100).toFixed(3)}%">` : "";
     return `<div class="rv-slide" data-i="${i}"><div class="rv-frame"><div class="rv-plan" style="--ar:${(cw / ch).toFixed(4)}">${img}${pins}</div></div></div>`;
   };
-  X.cap = (R, i) => { const p = R.pages[i], s = X.secOf(R, p); return `${X.smono(s && s.sys, s && s.mono)}<span><b>${U.L("p. ", "ص. ")}${p.n} · ${X.pageTitle(p, s)}</b>${p.shows ? `<span class="prose" lang="en" dir="ltr">${U.esc(p.shows)}</span>` : ""}</span>`; };
+  X.cap = (R, i) => { const p = R.pages[i], s = X.secOf(R, p); return `${X.smono(s && s.sys, s && s.mono)}<span><b>${U.L("p. ", "ص. ")}${p.n} · ${X.pageTitle(p, s)}</b>${p.shows ? `<span class="prose" ${X.pc()}>${U.esc(X.tr(p.shows))}</span>` : ""}</span>`; };
   /** What the set covers: floors × systems (a cell names its first page; tap → that page), the key, then the checklist by group. */
   X.coverage = (R) => {
     const C = R.coverage || {}, cols = C.cols || [], rows = C.rows || [], cells = C.cells || {};
@@ -16277,15 +16290,15 @@ window.SL = window.SL || {};
     const head = `<tr><th></th>${cols.map((c) => `<th><span class="rv-colh${X.sc(c.sys)}">${X.smono(c.sys, c.mono)}<small>${X.SEC()[c.sys] || `<span lang="en">${U.esc(c.word || "")}</span>`}</small></span></th>`).join("")}</tr>`;
     const body = rows.map((r) => `<tr><th>${X.floorWord(r.key)}</th>${cols.map((c) => {
       const x = cells[r.key + "|" + c.key] || { s: "na" }, pg = (x.pages || []).filter((n) => isFinite(n)), s = ST[x.s] != null ? x.s : "na";
-      const txt = s === "miss" ? "✕" : s === "na" ? "·" : pg.length ? pg[0] + (pg.length > 1 ? "+" : "") : "", tip = U.esc([ST[s], x.note || ""].filter(Boolean).join(" · "));
+      const txt = s === "miss" ? "✕" : s === "na" ? "·" : pg.length ? pg[0] + (pg.length > 1 ? "+" : "") : "", tip = U.esc([ST[s], X.tr(x.note || "")].filter(Boolean).join(" · "));
       return `<td>${pg.length ? `<button type="button" class="rv-cell ${s}${X.sc(c.sys)}" data-act="rvGo" data-n="${pg[0]}" data-pages="${pg.join(" ")}" data-col="${U.esc(c.key)}" title="${tip}" aria-label="${tip || pg[0]}">${txt}</button>` : `<span class="rv-cell ${s}${s === "miss" ? "" : X.sc(c.sys)}" data-col="${U.esc(c.key)}" title="${tip}">${txt}</span>`}</td>`; }).join("")}</tr>`).join("");
     const key = `<div class="rv-mxk"><span><span class="rv-cell drawn">4</span>${U.L("page", "صفحة")}</span><span><span class="rv-cell part">4</span>${U.L("partly", "جزئياً")}</span><span><span class="rv-cell miss">✕</span>${U.L("needed, not drawn", "مطلوب وغير مرسوم")}</span><span><span class="rv-cell na">·</span>${U.L("not needed", "غير مطلوب")}</span></div>`;
     const sum = C.summary || {};
     const GL = { no: "✕", part: "◐", ok: "✓" };
     const ck = (R.checklist || []).map((g) => {
       const items = g.items || [], miss = items.filter((i) => i.s !== "ok"), no = items.filter((i) => i.s === "no").length;
-      return `<div class="rv-ck"><h4><span lang="en">${U.esc(g.group)}</span><span class="n ${no ? "no" : miss.length ? "part" : "ok"}">${miss.length ? U.L(miss.length + " missing", miss.length + " ناقص") : U.L("✓ all " + items.length, "✓ الكل " + items.length)}</span></h4><ul>${items.map((it) => `<li><span class="st ${U.esc(it.s)}">${GL[it.s] || "·"}</span><span class="prose" lang="en" dir="ltr" title="${U.esc(it.note || "")}">${U.esc(it.label)}</span><span class="pp">${(it.pages || []).filter((n) => isFinite(n)).slice(0, 6).map((n) => `<button type="button" data-act="rvGo" data-n="${n}">${n}</button>`).join("")}</span></li>`).join("")}</ul></div>`; }).join("");
-    return `<div class="matrix rv-mx" dir="ltr"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>${key}${sum.line ? `<p class="t12 prose rv-sub" lang="en" dir="ltr">${U.esc(sum.line)}</p>` : ""}${ck}`;
+      return `<div class="rv-ck"><h4><span lang="${X.has(g.group) ? "ar" : "en"}">${U.esc(X.tr(g.group))}</span><span class="n ${no ? "no" : miss.length ? "part" : "ok"}">${miss.length ? U.L(miss.length + " missing", miss.length + " ناقص") : U.L("✓ all " + items.length, "✓ الكل " + items.length)}</span></h4><ul>${items.map((it) => `<li><span class="st ${U.esc(it.s)}">${GL[it.s] || "·"}</span><span class="prose" ${X.pc()} title="${U.esc(X.tr(it.note || ""))}">${U.esc(X.tr(it.label))}</span><span class="pp">${(it.pages || []).filter((n) => isFinite(n)).slice(0, 6).map((n) => `<button type="button" data-act="rvGo" data-n="${n}">${n}</button>`).join("")}</span></li>`).join("")}</ul></div>`; }).join("");
+    return `<div class="matrix rv-mx" dir="ltr"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>${key}${sum.line ? `<p class="t12 prose rv-sub" ${X.pc()}>${U.esc(X.tr(sum.line))}</p>` : ""}${ck}`;
   };
 
   SL.views.plans = {
@@ -16304,6 +16317,7 @@ window.SL = window.SL || {};
         return `<div class="v-plans"><div class="sec"><figure class="rv-wait"><span class="tl"><b>${U.t(X.sum(d).title || d.title || id)}</b></span>${empty(msg)}</figure></div></div>`;
       }
       const R = st.data, N = R.pages.length;
+      X.dict = R.ar || {}; X.dictN = Object.keys(X.dict).length;
       const want = U.num((route.args || [])[1]);
       let i = want > 0 ? R.pages.findIndex((x) => x.n === want) : -1;
       if (i < 0) i = Math.min(Math.max(0, X.cur[id] || 0), N - 1);
@@ -16322,7 +16336,7 @@ window.SL = window.SL || {};
       h += slot("rvTo", "rv-takeoff", U.L("Take-off", "حصر الكميات"));
       h += `<div class="rv-call" aria-label="${U.L("For the call", "للاجتماع")}">${slot("rvD", "rv-lens", U.L("Design", "التصميم"))}${slot("rvE", "rv-lens", U.L("Economic", "الاقتصادي"))}${slot("rvT", "rv-lens", U.L("Technical", "الفني"))}${slot("rvX", "rv-drop", U.L("Checked, don't raise", "تم التحقق، لا تُطرح"))}</div>`;
       const cs = (R.coverage && R.coverage.summary) || {};
-      h += `<section class="sec rv-slot rv-cov"><h3 class="rv-h"><span>${U.L("What the set covers", "ما تغطيه المجموعة")}</span><span class="aside" lang="en">${U.esc(cs.aside || "")}</span></h3><div class="rv-body">${X.coverage(R)}</div></section>`;
+      h += `<section class="sec rv-slot rv-cov"><h3 class="rv-h"><span>${U.L("What the set covers", "ما تغطيه المجموعة")}</span><span class="aside" lang="${X.has(cs.aside) ? "ar" : "en"}">${U.esc(X.tr(cs.aside || ""))}</span></h3><div class="rv-body">${X.coverage(R)}</div></section>`;
       return h + "</div></div>";
     },
     after(view) {
